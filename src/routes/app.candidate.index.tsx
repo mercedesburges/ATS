@@ -12,16 +12,20 @@ export const Route = createFileRoute("/app/candidate/")({
 });
 
 function CandidateHome() {
-  const { user } = (Route as any).useRouteContext?.() ?? { user: null };
+  const routeCtx = useRouteContext({ from: "/app/candidate" }) as any;
+  const user = routeCtx?.user ?? null;
   const qc = useQueryClient();
 
   const { data: candidate, refetch } = useQuery({
-    queryKey: ["my-candidate"],
+    queryKey: ["my-candidate", user?.id],
+    enabled: !!user?.id,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("candidates")
         .select("id,full_name,email,ai_profile,profile_validated_at,job_id,jobs(title,clients(name))")
+        .eq("auth_user_id", user!.id)
         .maybeSingle();
+      if (error) throw error;
       return data;
     },
   });
