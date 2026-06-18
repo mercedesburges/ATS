@@ -74,37 +74,22 @@ export const inviteCandidate = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    let userId = candidate.auth_user_id;
-    if (!userId) {
-      const { data: existing } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-      const found = existing?.users?.find((u: any) => u.email?.toLowerCase() === candidate.email!.toLowerCase());
-      if (found) {
-        userId = found.id;
-      } else {
-        const { data: created, error: cErr } = await supabaseAdmin.auth.admin.createUser({
-          email: candidate.email!,
-          email_confirm: true,
-          user_metadata: { first_name: candidate.full_name?.split(" ")[0] ?? "", last_name: candidate.full_name?.split(" ").slice(1).join(" ") ?? "" },
-        });
-        if (cErr) throw new Error(cErr.message);
-        userId = created.user!.id;
-      }
-      await supabaseAdmin.from("candidates").update({ auth_user_id: userId, interview_invited_at: new Date().toISOString() }).eq("id", candidate.id);
-      await supabaseAdmin.from("user_roles").upsert({ user_id: userId, role: "candidate" }, { onConflict: "user_id,role" });
-      await supabaseAdmin.from("user_roles").delete().eq("user_id", userId).eq("role", "client");
-    } else {
-      await supabaseAdmin.from("candidates").update({ interview_invited_at: new Date().toISOString() }).eq("id", candidate.id);
-    }
+    // Rotate a one-time token tied to this invitation. The LinkedIn login
+    // link is only valid while this token is present on the candidate row.
+    const token = (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "");
+    await supabaseAdmin
+      .from("candidates")
+      .update({
+        linkedin_invite_token: token,
+        interview_invited_at: new Date().toISOString(),
+      })
+      .eq("id", candidate.id);
 
-    const origin = process.env.SITE_URL || "";
-    const { data: link, error: lErr } = await supabaseAdmin.auth.admin.generateLink({
-      type: "magiclink",
-      email: candidate.email!,
-      options: { redirectTo: `${origin}/app/candidate` },
-    });
-    if (lErr) throw new Error(lErr.message);
-    return { magic_link: link?.properties?.action_link ?? "", email: candidate.email };
+    const origin = process.env.SITE_URL || "https://www.vivid-talent.com";
+    const loginUrl = `${origin}/candidate/login?c=${candidate.id}&t=${token}`;
+    return { magic_link: loginUrl, email: candidate.email };
   });
+
 
 export const processInterview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
