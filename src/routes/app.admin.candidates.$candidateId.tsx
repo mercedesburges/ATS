@@ -118,19 +118,19 @@ function CandidateEditor() {
       {editingContact && <ContactEditModal candidate={candidate} onClose={() => setEditingContact(false)} onSaved={() => { setEditingContact(false); refetch(); }} />}
 
       <div className="p-8">
-        <Tabs defaultValue="cv" className="w-full">
+        <Tabs defaultValue="perfil" className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="cv" className="gap-2"><FileText className="size-4" /> CV</TabsTrigger>
             <TabsTrigger value="perfil" className="gap-2"><Briefcase className="size-4" /> Perfil & Skills</TabsTrigger>
-            <TabsTrigger value="entrevista" className="gap-2"><Video className="size-4" /> Entrevista AI</TabsTrigger>
+            <TabsTrigger value="cv" className="gap-2"><FileText className="size-4" /> CV</TabsTrigger>
+            <TabsTrigger value="entrevista" className="gap-2"><Video className="size-4" /> Live Cover Letter</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="cv">
-            <CvSection candidate={candidate} onUpdate={refetch} />
-          </TabsContent>
 
           <TabsContent value="perfil">
             <ProfileSkillsTab candidate={candidate} onUpdate={refetch} />
+          </TabsContent>
+
+          <TabsContent value="cv">
+            <CvSection candidate={candidate} onUpdate={refetch} />
           </TabsContent>
 
           <TabsContent value="entrevista" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
