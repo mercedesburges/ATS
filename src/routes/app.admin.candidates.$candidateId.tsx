@@ -271,10 +271,11 @@ function VideoSection({ candidate, onUpdate }: any) {
       const { error } = await supabase.storage.from("interview-videos").upload(path, file);
       if (error) throw error;
       const { data: signed } = await supabase.storage.from("interview-videos").createSignedUrl(path, 60 * 60 * 24 * 365);
+      const url = signed?.signedUrl ?? "";
       if (existing) {
-        await supabase.from("interview_videos").update({ video_url: signed?.signedUrl }).eq("id", existing.id);
+        await supabase.from("interview_videos").update({ video_url: url }).eq("id", existing.id);
       } else {
-        await supabase.from("interview_videos").insert({ candidate_id: candidate.id, video_url: signed?.signedUrl });
+        await supabase.from("interview_videos").insert({ candidate_id: candidate.id, video_url: url });
       }
       toast.success("Video subido");
       onUpdate();
