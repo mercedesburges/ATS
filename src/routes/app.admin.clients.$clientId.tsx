@@ -18,8 +18,11 @@ const CONTACT_TYPE_LABEL: Record<string, string> = {
 function ClientDetail() {
   const { clientId } = useParams({ from: "/app/admin/clients/$clientId" });
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [showNewJob, setShowNewJob] = useState(false);
   const [showNewContact, setShowNewContact] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
 
   const { data: client } = useQuery({
     queryKey: ["client", clientId],
