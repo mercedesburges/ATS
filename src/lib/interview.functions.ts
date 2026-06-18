@@ -91,6 +91,7 @@ export const inviteCandidate = createServerFn({ method: "POST" })
       }
       await supabaseAdmin.from("candidates").update({ auth_user_id: userId, interview_invited_at: new Date().toISOString() }).eq("id", candidate.id);
       await supabaseAdmin.from("user_roles").upsert({ user_id: userId, role: "candidate" }, { onConflict: "user_id,role" });
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", userId).eq("role", "client");
     } else {
       await supabaseAdmin.from("candidates").update({ interview_invited_at: new Date().toISOString() }).eq("id", candidate.id);
     }
