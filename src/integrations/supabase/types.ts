@@ -287,6 +287,47 @@ export type Database = {
           },
         ]
       }
+      client_metric_defaults: {
+        Row: {
+          client_id: string
+          created_at: string
+          hiring_team_alert_days: number
+          hiring_team_warn_days: number
+          id: string
+          recruiter_alert_days: number
+          recruiter_warn_days: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          hiring_team_alert_days?: number
+          hiring_team_warn_days?: number
+          id?: string
+          recruiter_alert_days?: number
+          recruiter_warn_days?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          hiring_team_alert_days?: number
+          hiring_team_warn_days?: number
+          id?: string
+          recruiter_alert_days?: number
+          recruiter_warn_days?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_metric_defaults_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_stage_defaults: {
         Row: {
           category: string
