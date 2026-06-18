@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, X, User } from "lucide-react";
+import { ArrowLeft, Plus, X, User, Upload } from "lucide-react";
 
 export const Route = createFileRoute("/app/admin/jobs/$jobId")({
   component: JobDetail,
@@ -129,21 +129,29 @@ function NewCandidateDialog({ jobId, firstStageId, onClose, onCreated }: { jobId
   const [email, setEmail] = useState("");
   const [headline, setHeadline] = useState("");
   const [years, setYears] = useState("");
+  const [cv, setCv] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.from("candidates").insert({
+      const { data: inserted, error } = await supabase.from("candidates").insert({
         job_id: jobId,
         full_name: fullName,
         email: email || null,
         headline: headline || null,
         years_experience: years ? parseInt(years) : null,
         current_stage_id: firstStageId,
-      });
+      }).select("id").single();
       if (error) throw error;
+      if (cv && inserted) {
+        const path = `${inserted.id}/${cv.name}`;
+        const { error: upErr } = await supabase.storage.from("cvs").upload(path, cv, { upsert: true });
+        if (upErr) throw upErr;
+        const { data: signed } = await supabase.storage.from("cvs").createSignedUrl(path, 60 * 60 * 24 * 30);
+        await supabase.from("candidates").update({ cv_url: signed?.signedUrl ?? null }).eq("id", inserted.id);
+      }
       toast.success("Candidato agregado");
       onCreated();
       onClose();
@@ -153,8 +161,8 @@ function NewCandidateDialog({ jobId, firstStageId, onClose, onCreated }: { jobId
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center p-4">
-      <div className="bg-background w-full max-w-lg rounded-3xl border border-border">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center p-4 overflow-y-auto">
+      <div className="bg-background w-full max-w-lg rounded-3xl border border-border my-8">
         <div className="p-6 border-b border-border flex justify-between items-center">
           <h2 className="font-display text-2xl">Nuevo candidato</h2>
           <button onClick={onClose} className="size-8 rounded-full hover:bg-muted grid place-items-center"><X className="size-4" /></button>
@@ -164,7 +172,14 @@ function NewCandidateDialog({ jobId, firstStageId, onClose, onCreated }: { jobId
           <Field label="Email (opcional)" type="email" value={email} onChange={setEmail} />
           <Field label="Headline (ej: Senior Product Lead)" value={headline} onChange={setHeadline} />
           <Field label="Años de experiencia" type="number" value={years} onChange={setYears} />
-          <p className="text-xs text-muted-foreground">Foto, CV, skills, video y experiencia se agregan después en la ficha del candidato.</p>
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">CV (PDF / DOC) — opcional</label>
+            <label className="mt-1 flex items-center justify-center gap-2 cursor-pointer border border-dashed border-border rounded-2xl py-3 px-4 text-xs text-muted-foreground hover:border-primary/30 hover:text-foreground">
+              <Upload className="size-3.5" /> {cv ? cv.name : "Subir archivo"}
+              <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => setCv(e.target.files?.[0] ?? null)} />
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground">Foto, skills, video y experiencia se agregan después en la ficha del candidato.</p>
           <button type="submit" disabled={loading} className="w-full py-3 bg-primary text-primary-foreground rounded-full text-sm font-bold disabled:opacity-50">
             {loading ? "..." : "Crear candidato"}
           </button>
