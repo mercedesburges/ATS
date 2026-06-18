@@ -299,7 +299,7 @@ function VideoSection({ candidate, onUpdate }: any) {
   );
 }
 
-function Input({ label, value, onChange, type = "text" }: any) {
+function Input({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
   return (
     <div>
       <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</label>
