@@ -51,19 +51,19 @@ function ClientDetail() {
 
   return (
     <div>
-      <header className="px-8 py-6 border-b border-border">
+      <header className="px-6 md:px-8 py-6 border-b border-border">
         <Link to="/app/admin/clients" className="text-xs text-muted-foreground inline-flex items-center gap-1 hover:text-foreground"><ArrowLeft className="size-3" /> Volver a clientes</Link>
-        <div className="flex justify-between items-end mt-2">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mt-2">
           <div>
             <p className="text-sm text-muted-foreground">Cliente</p>
-            <h1 className="font-display text-4xl mt-1">{client?.name ?? "..."}</h1>
+            <h1 className="font-display text-3xl md:text-4xl mt-1">{client?.name ?? "..."}</h1>
             {client?.industry && <p className="text-sm text-muted-foreground mt-1">{client.industry}</p>}
           </div>
-          <div className="flex gap-3">
-            <button onClick={() => setShowNewContact(true)} className="flex items-center gap-2 px-5 py-2.5 bg-white border border-border rounded-full text-sm font-bold hover:border-primary/30">
+          <div className="flex flex-wrap gap-3">
+            <button onClick={() => setShowNewContact(true)} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-full text-sm font-bold hover:border-primary/30">
               <UserPlus className="size-4" /> Agregar contacto
             </button>
-            <button onClick={() => setShowNewJob(true)} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-bold">
+            <button onClick={() => setShowNewJob(true)} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-bold">
               <Plus className="size-4" /> Nuevo puesto
             </button>
           </div>
