@@ -16,13 +16,14 @@ function CandidatesList() {
   const [showNew, setShowNew] = useState(false);
   const [clientFilter, setClientFilter] = useState("");
   const [jobFilter, setJobFilter] = useState("");
+  const [expertiseFilter, setExpertiseFilter] = useState("");
 
   const { data: candidates } = useQuery({
     queryKey: ["all-candidates"],
     queryFn: async () => {
       const { data } = await supabase
         .from("candidates")
-        .select("id,full_name,headline,photo_url,visibility,years_experience,job_id,jobs(id,title,client_id,clients(id,name))")
+        .select("id,full_name,headline,photo_url,visibility,years_experience,expertise,city,country,job_id,jobs(id,title,client_id,clients(id,name))")
         .order("created_at", { ascending: false });
       return data ?? [];
     },
@@ -44,9 +45,16 @@ function CandidatesList() {
     return Array.from(m.values()).filter((j) => !clientFilter || j.clientId === clientFilter);
   }, [candidates, clientFilter]);
 
+  const expertises = useMemo(() => {
+    const s = new Set<string>();
+    candidates?.forEach((c: any) => { if (c.expertise) s.add(c.expertise); });
+    return Array.from(s).sort();
+  }, [candidates]);
+
   const filtered = candidates?.filter((c: any) => {
     if (clientFilter && c.jobs?.clients?.id !== clientFilter) return false;
     if (jobFilter && c.job_id !== jobFilter) return false;
+    if (expertiseFilter && c.expertise !== expertiseFilter) return false;
     return true;
   });
 
@@ -82,8 +90,16 @@ function CandidatesList() {
           <option value="">Todas las posiciones</option>
           {jobs.map((j) => <option key={j.id} value={j.id}>{j.title}</option>)}
         </select>
-        {(clientFilter || jobFilter) && (
-          <button onClick={() => { setClientFilter(""); setJobFilter(""); }} className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+        <select
+          value={expertiseFilter}
+          onChange={(e) => setExpertiseFilter(e.target.value)}
+          className="bg-white border border-border rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          <option value="">Todas las expertises</option>
+          {expertises.map((e) => <option key={e} value={e}>{e}</option>)}
+        </select>
+        {(clientFilter || jobFilter || expertiseFilter) && (
+          <button onClick={() => { setClientFilter(""); setJobFilter(""); setExpertiseFilter(""); }} className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
             <X className="size-3" /> Limpiar filtros
           </button>
         )}
