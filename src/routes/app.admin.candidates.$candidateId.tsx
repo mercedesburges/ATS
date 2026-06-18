@@ -333,9 +333,13 @@ function InterviewAdminSection({ candidate, onUpdate }: any) {
   async function invite() {
     setInviting(true);
     try {
-      const res = await inviteFn({ data: { candidateId: candidate.id } });
+      const res: any = await inviteFn({ data: { candidateId: candidate.id } });
       setMagicLink(res.magic_link);
-      toast.success(`Invitación lista. Copiá el link y envialo a ${res.email}`);
+      if (res.emailSent) {
+        toast.success(`Email enviado a ${res.email}`);
+      } else {
+        toast.warning(`No se pudo enviar el email${res.emailError ? `: ${res.emailError}` : ""}. Podés copiar el link manualmente.`);
+      }
       onUpdate();
     } catch (e: any) { toast.error(e.message); } finally { setInviting(false); }
   }

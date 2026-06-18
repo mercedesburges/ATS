@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GW_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -67,15 +68,13 @@ export const inviteCandidate = createServerFn({ method: "POST" })
     await requireAdmin(context);
     const { data: candidate } = await context.supabase
       .from("candidates")
-      .select("id,email,full_name,auth_user_id")
+      .select("id,email,full_name,auth_user_id,jobs(title,clients(name))")
       .eq("id", data.candidateId)
       .single();
     if (!candidate?.email) throw new Error("El candidato no tiene email cargado");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Rotate a one-time token tied to this invitation. The LinkedIn login
-    // link is only valid while this token is present on the candidate row.
     const token = (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "");
     await supabaseAdmin
       .from("candidates")
@@ -87,7 +86,40 @@ export const inviteCandidate = createServerFn({ method: "POST" })
 
     const origin = process.env.SITE_URL || "https://www.vivid-talent.com";
     const loginUrl = `${origin}/candidate/login?c=${candidate.id}&t=${token}`;
-    return { magic_link: loginUrl, email: candidate.email };
+
+    // Send invitation email via internal transactional route
+    let emailSent = false;
+    let emailError: string | null = null;
+    try {
+      const authHeader = getRequestHeader("authorization") || getRequestHeader("Authorization");
+      const sendRes = await fetch(`${origin}/lovable/email/transactional/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeader ? { Authorization: authHeader } : {}),
+        },
+        body: JSON.stringify({
+          templateName: "candidate-invite",
+          recipientEmail: candidate.email,
+          idempotencyKey: `candidate-invite-${candidate.id}-${token.slice(0, 8)}`,
+          templateData: {
+            candidateName: candidate.full_name,
+            jobTitle: (candidate as any).jobs?.title,
+            clientName: (candidate as any).jobs?.clients?.name,
+            loginUrl,
+          },
+        }),
+      });
+      if (sendRes.ok) {
+        emailSent = true;
+      } else {
+        emailError = `${sendRes.status}: ${(await sendRes.text()).slice(0, 200)}`;
+      }
+    } catch (e: any) {
+      emailError = e?.message ?? String(e);
+    }
+
+    return { magic_link: loginUrl, email: candidate.email, emailSent, emailError };
   });
 
 
