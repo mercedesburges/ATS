@@ -15,11 +15,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppPortalIndexRouteImport } from './routes/app.portal.index'
 import { Route as AppAdminIndexRouteImport } from './routes/app.admin.index'
+import { Route as AppAdminMetricsRouteImport } from './routes/app.admin.metrics'
 import { Route as AppAdminJobsRouteImport } from './routes/app.admin.jobs'
+import { Route as AppAdminContactsRouteImport } from './routes/app.admin.contacts'
 import { Route as AppAdminCandidatesRouteImport } from './routes/app.admin.candidates'
 import { Route as AppAdminAutomationsRouteImport } from './routes/app.admin.automations'
-import { Route as AppAdminContactsRouteImport } from './routes/app.admin.contacts'
-import { Route as AppAdminMetricsRouteImport } from './routes/app.admin.metrics'
 import { Route as AppAdminClientsIndexRouteImport } from './routes/app.admin.clients.index'
 import { Route as AppPortalJobsJobIdRouteImport } from './routes/app.portal.jobs.$jobId'
 import { Route as AppAdminJobsJobIdRouteImport } from './routes/app.admin.jobs.$jobId'
@@ -57,9 +57,19 @@ const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminMetricsRoute = AppAdminMetricsRouteImport.update({
+  id: '/admin/metrics',
+  path: '/admin/metrics',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminJobsRoute = AppAdminJobsRouteImport.update({
   id: '/admin/jobs',
   path: '/admin/jobs',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminContactsRoute = AppAdminContactsRouteImport.update({
+  id: '/admin/contacts',
+  path: '/admin/contacts',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminCandidatesRoute = AppAdminCandidatesRouteImport.update({
@@ -70,16 +80,6 @@ const AppAdminCandidatesRoute = AppAdminCandidatesRouteImport.update({
 const AppAdminAutomationsRoute = AppAdminAutomationsRouteImport.update({
   id: '/admin/automations',
   path: '/admin/automations',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminContactsRoute = AppAdminContactsRouteImport.update({
-  id: '/admin/contacts',
-  path: '/admin/contacts',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminMetricsRoute = AppAdminMetricsRouteImport.update({
-  id: '/admin/metrics',
-  path: '/admin/metrics',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminClientsIndexRoute = AppAdminClientsIndexRouteImport.update({
@@ -121,10 +121,10 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/app/': typeof AppIndexRoute
   '/app/admin/automations': typeof AppAdminAutomationsRoute
-  '/app/admin/contacts': typeof AppAdminContactsRoute
-  '/app/admin/metrics': typeof AppAdminMetricsRoute
   '/app/admin/candidates': typeof AppAdminCandidatesRouteWithChildren
+  '/app/admin/contacts': typeof AppAdminContactsRoute
   '/app/admin/jobs': typeof AppAdminJobsRouteWithChildren
+  '/app/admin/metrics': typeof AppAdminMetricsRoute
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/portal/': typeof AppPortalIndexRoute
   '/app/admin/candidates/$candidateId': typeof AppAdminCandidatesCandidateIdRoute
@@ -139,10 +139,10 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/app': typeof AppIndexRoute
   '/app/admin/automations': typeof AppAdminAutomationsRoute
-  '/app/admin/contacts': typeof AppAdminContactsRoute
-  '/app/admin/metrics': typeof AppAdminMetricsRoute
   '/app/admin/candidates': typeof AppAdminCandidatesRouteWithChildren
+  '/app/admin/contacts': typeof AppAdminContactsRoute
   '/app/admin/jobs': typeof AppAdminJobsRouteWithChildren
+  '/app/admin/metrics': typeof AppAdminMetricsRoute
   '/app/admin': typeof AppAdminIndexRoute
   '/app/portal': typeof AppPortalIndexRoute
   '/app/admin/candidates/$candidateId': typeof AppAdminCandidatesCandidateIdRoute
@@ -159,10 +159,10 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/app/': typeof AppIndexRoute
   '/app/admin/automations': typeof AppAdminAutomationsRoute
-  '/app/admin/contacts': typeof AppAdminContactsRoute
-  '/app/admin/metrics': typeof AppAdminMetricsRoute
   '/app/admin/candidates': typeof AppAdminCandidatesRouteWithChildren
+  '/app/admin/contacts': typeof AppAdminContactsRoute
   '/app/admin/jobs': typeof AppAdminJobsRouteWithChildren
+  '/app/admin/metrics': typeof AppAdminMetricsRoute
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/portal/': typeof AppPortalIndexRoute
   '/app/admin/candidates/$candidateId': typeof AppAdminCandidatesCandidateIdRoute
@@ -180,10 +180,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app/'
     | '/app/admin/automations'
-    | '/app/admin/contacts'
-    | '/app/admin/metrics'
     | '/app/admin/candidates'
+    | '/app/admin/contacts'
     | '/app/admin/jobs'
+    | '/app/admin/metrics'
     | '/app/admin/'
     | '/app/portal/'
     | '/app/admin/candidates/$candidateId'
@@ -198,10 +198,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app'
     | '/app/admin/automations'
-    | '/app/admin/contacts'
-    | '/app/admin/metrics'
     | '/app/admin/candidates'
+    | '/app/admin/contacts'
     | '/app/admin/jobs'
+    | '/app/admin/metrics'
     | '/app/admin'
     | '/app/portal'
     | '/app/admin/candidates/$candidateId'
@@ -217,10 +217,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app/'
     | '/app/admin/automations'
-    | '/app/admin/contacts'
-    | '/app/admin/metrics'
     | '/app/admin/candidates'
+    | '/app/admin/contacts'
     | '/app/admin/jobs'
+    | '/app/admin/metrics'
     | '/app/admin/'
     | '/app/portal/'
     | '/app/admin/candidates/$candidateId'
@@ -281,11 +281,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin/metrics': {
+      id: '/app/admin/metrics'
+      path: '/admin/metrics'
+      fullPath: '/app/admin/metrics'
+      preLoaderRoute: typeof AppAdminMetricsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin/jobs': {
       id: '/app/admin/jobs'
       path: '/admin/jobs'
       fullPath: '/app/admin/jobs'
       preLoaderRoute: typeof AppAdminJobsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin/contacts': {
+      id: '/app/admin/contacts'
+      path: '/admin/contacts'
+      fullPath: '/app/admin/contacts'
+      preLoaderRoute: typeof AppAdminContactsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/admin/candidates': {
@@ -300,20 +314,6 @@ declare module '@tanstack/react-router' {
       path: '/admin/automations'
       fullPath: '/app/admin/automations'
       preLoaderRoute: typeof AppAdminAutomationsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/admin/contacts': {
-      id: '/app/admin/contacts'
-      path: '/admin/contacts'
-      fullPath: '/app/admin/contacts'
-      preLoaderRoute: typeof AppAdminContactsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/admin/metrics': {
-      id: '/app/admin/metrics'
-      path: '/admin/metrics'
-      fullPath: '/app/admin/metrics'
-      preLoaderRoute: typeof AppAdminMetricsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/admin/clients/': {
@@ -399,10 +399,10 @@ const AppPortalJobsJobIdRouteWithChildren =
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppAdminAutomationsRoute: typeof AppAdminAutomationsRoute
-  AppAdminContactsRoute: typeof AppAdminContactsRoute
-  AppAdminMetricsRoute: typeof AppAdminMetricsRoute
   AppAdminCandidatesRoute: typeof AppAdminCandidatesRouteWithChildren
+  AppAdminContactsRoute: typeof AppAdminContactsRoute
   AppAdminJobsRoute: typeof AppAdminJobsRouteWithChildren
+  AppAdminMetricsRoute: typeof AppAdminMetricsRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
   AppPortalIndexRoute: typeof AppPortalIndexRoute
   AppAdminClientsClientIdRoute: typeof AppAdminClientsClientIdRoute
@@ -413,10 +413,10 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppAdminAutomationsRoute: AppAdminAutomationsRoute,
-  AppAdminContactsRoute: AppAdminContactsRoute,
-  AppAdminMetricsRoute: AppAdminMetricsRoute,
   AppAdminCandidatesRoute: AppAdminCandidatesRouteWithChildren,
+  AppAdminContactsRoute: AppAdminContactsRoute,
   AppAdminJobsRoute: AppAdminJobsRouteWithChildren,
+  AppAdminMetricsRoute: AppAdminMetricsRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
   AppPortalIndexRoute: AppPortalIndexRoute,
   AppAdminClientsClientIdRoute: AppAdminClientsClientIdRoute,
