@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS trg_create_default_job_stages ON public.jobs;
