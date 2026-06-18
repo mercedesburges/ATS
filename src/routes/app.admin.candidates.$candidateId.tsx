@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -15,6 +15,7 @@ export const Route = createFileRoute("/app/admin/candidates/$candidateId")({
 function CandidateEditor() {
   const { candidateId } = useParams({ from: "/app/admin/candidates/$candidateId" });
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: candidate, refetch, isLoading, error } = useQuery({
     queryKey: ["candidate-edit", candidateId],
@@ -25,6 +26,38 @@ function CandidateEditor() {
     },
   });
 
+  const photoRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function uploadPhoto(file: File) {
+    if (!candidate) return;
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${candidate.id}.${ext}`;
+      const { error } = await supabase.storage.from("candidate-photos").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data: signed } = await supabase.storage.from("candidate-photos").createSignedUrl(path, 60 * 60 * 24 * 365);
+      await supabase.from("candidates").update({ photo_url: signed?.signedUrl }).eq("id", candidate.id);
+      toast.success("Foto actualizada");
+      refetch();
+    } catch (e: any) { toast.error(e.message); } finally { setUploadingPhoto(false); }
+  }
+
+  async function deleteCandidate() {
+    if (!candidate) return;
+    if (!confirm(`¿Borrar a ${candidate.full_name}? Esta acción no se puede deshacer.`)) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("candidates").delete().eq("id", candidate.id);
+      if (error) throw error;
+      toast.success("Candidato eliminado");
+      qc.invalidateQueries({ queryKey: ["all-candidates"] });
+      navigate({ to: "/app/admin/candidates" });
+    } catch (e: any) { toast.error(e.message); setDeleting(false); }
+  }
+
   if (isLoading) return <div className="p-8 text-muted-foreground">Cargando…</div>;
   if (error) return <div className="p-8 text-destructive">Error: {(error as any).message}</div>;
   if (!candidate) return <div className="p-8 text-muted-foreground">Candidato no encontrado.</div>;
@@ -33,33 +66,56 @@ function CandidateEditor() {
     <div>
       <header className="px-8 py-6 border-b border-border">
         <Link to="/app/admin/candidates" className="text-xs text-muted-foreground inline-flex items-center gap-1"><ArrowLeft className="size-3" /> Volver</Link>
-        <div className="mt-2 flex items-end justify-between flex-wrap gap-3">
-          <div>
-            <p className="text-sm text-muted-foreground">{candidate.jobs?.clients?.name} · {candidate.jobs?.title}</p>
-            <h1 className="font-display text-4xl mt-1">{candidate.full_name}</h1>
+        <div className="mt-3 flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+            <button
+              type="button"
+              onClick={() => photoRef.current?.click()}
+              disabled={uploadingPhoto}
+              title="Cambiar foto"
+              className="size-16 shrink-0 bg-stone-100 rounded-full overflow-hidden border border-border hover:opacity-80 disabled:opacity-50"
+            >
+              {candidate.photo_url
+                ? <img src={candidate.photo_url} alt="" className="w-full h-full object-cover" />
+                : <div className="h-full grid place-items-center text-stone-400"><User className="size-6" /></div>}
+            </button>
+            <input ref={photoRef} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground truncate">{candidate.jobs?.clients?.name} · {candidate.jobs?.title}</p>
+              <h1 className="font-display text-3xl mt-0.5 truncate">{candidate.full_name}</h1>
+            </div>
           </div>
-          <VisibilityToggle candidateId={candidate.id} visibility={candidate.visibility} onChange={() => refetch()} />
+          <div className="flex items-center gap-2">
+            <VisibilityToggle candidateId={candidate.id} visibility={candidate.visibility} onChange={() => refetch()} />
+            <button
+              onClick={deleteCandidate}
+              disabled={deleting}
+              className="size-10 rounded-full grid place-items-center text-destructive border border-destructive/20 hover:bg-destructive/10 disabled:opacity-50"
+              title="Eliminar candidato"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          </div>
         </div>
       </header>
 
       <div className="p-8">
-        <Tabs defaultValue="perfil" className="w-full">
+        <Tabs defaultValue="cv" className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="perfil" className="gap-2"><FileText className="size-4" /> Perfil & CV</TabsTrigger>
-            <TabsTrigger value="skills" className="gap-2"><Briefcase className="size-4" /> Skills & Experiencia</TabsTrigger>
+            <TabsTrigger value="cv" className="gap-2"><FileText className="size-4" /> CV</TabsTrigger>
+            <TabsTrigger value="perfil" className="gap-2"><Briefcase className="size-4" /> Perfil & Skills</TabsTrigger>
             <TabsTrigger value="entrevista" className="gap-2"><Video className="size-4" /> Entrevista AI</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="perfil" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <PhotoSection candidate={candidate} onUpdate={refetch} />
-            <div className="space-y-6">
-              <BasicInfo candidate={candidate} onUpdate={refetch} />
-              <CvSection candidate={candidate} onUpdate={refetch} />
-            </div>
+          <TabsContent value="cv">
+            <CvSection candidate={candidate} onUpdate={refetch} />
           </TabsContent>
 
-          <TabsContent value="skills" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SkillsSection candidate={candidate} onUpdate={refetch} />
+          <TabsContent value="perfil" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <BasicInfo candidate={candidate} onUpdate={refetch} />
+              <SkillsSection candidate={candidate} onUpdate={refetch} />
+            </div>
             <ExperienceSection candidate={candidate} onUpdate={refetch} />
           </TabsContent>
 
@@ -93,37 +149,6 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
       <h3 className="font-display text-xl mb-4">{title}</h3>
       {children}
     </div>
-  );
-}
-
-function PhotoSection({ candidate, onUpdate }: any) {
-  const ref = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-
-  async function upload(file: File) {
-    setUploading(true);
-    try {
-      const ext = file.name.split(".").pop();
-      const path = `${candidate.id}.${ext}`;
-      const { error } = await supabase.storage.from("candidate-photos").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data: signed } = await supabase.storage.from("candidate-photos").createSignedUrl(path, 60 * 60 * 24 * 365);
-      await supabase.from("candidates").update({ photo_url: signed?.signedUrl }).eq("id", candidate.id);
-      toast.success("Foto subida");
-      onUpdate();
-    } catch (e: any) { toast.error(e.message); } finally { setUploading(false); }
-  }
-
-  return (
-    <Card title="Foto">
-      <div className="w-40 aspect-[4/5] bg-stone-100 rounded-2xl overflow-hidden mb-3 mx-auto">
-        {candidate.photo_url ? <img src={candidate.photo_url} alt="" className="w-full h-full object-cover" /> : <div className="h-full grid place-items-center text-stone-400"><User className="size-8" /></div>}
-      </div>
-      <input ref={ref} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
-      <button onClick={() => ref.current?.click()} disabled={uploading} className="w-full py-2.5 bg-stone-50 border border-border rounded-xl text-sm font-medium hover:bg-stone-100 disabled:opacity-50">
-        {uploading ? "Subiendo..." : "Cambiar foto"}
-      </button>
-    </Card>
   );
 }
 
