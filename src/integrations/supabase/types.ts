@@ -233,10 +233,13 @@ export type Database = {
           ai_profile: Json | null
           auth_user_id: string | null
           birth_date: string | null
+          city: string | null
+          country: string | null
           created_at: string
           current_stage_id: string | null
           cv_url: string | null
           email: string | null
+          expertise: string | null
           full_name: string
           headline: string | null
           id: string
@@ -259,10 +262,13 @@ export type Database = {
           ai_profile?: Json | null
           auth_user_id?: string | null
           birth_date?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           current_stage_id?: string | null
           cv_url?: string | null
           email?: string | null
+          expertise?: string | null
           full_name: string
           headline?: string | null
           id?: string
@@ -285,10 +291,13 @@ export type Database = {
           ai_profile?: Json | null
           auth_user_id?: string | null
           birth_date?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           current_stage_id?: string | null
           cv_url?: string | null
           email?: string | null
+          expertise?: string | null
           full_name?: string
           headline?: string | null
           id?: string
