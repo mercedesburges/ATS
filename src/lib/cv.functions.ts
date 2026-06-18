@@ -55,3 +55,98 @@ Reglas:
       linkedin_url: String(parsed.linkedin_url ?? "").trim(),
     };
   });
+
+export const analyzeCvProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { candidateId: string }) => i)
+  .handler(async ({ data, context }) => {
+    const { data: cand } = await context.supabase
+      .from("candidates")
+      .select("id,full_name,cv_url,jobs(title,description,clients(name))")
+      .eq("id", data.candidateId)
+      .single();
+    if (!cand?.cv_url) throw new Error("El candidato no tiene CV cargado");
+
+    const fileRes = await fetch(cand.cv_url);
+    if (!fileRes.ok) throw new Error("No se pudo descargar el CV");
+    const buf = await fileRes.arrayBuffer();
+    const b64 = Buffer.from(buf).toString("base64");
+    const mime = fileRes.headers.get("content-type") || "application/pdf";
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY no configurada");
+
+    const system = `Sos una recruiter senior. Analizás un CV y devolvés SOLO JSON válido con esta forma exacta:
+{
+  "summary": "string (3-5 oraciones describiendo la experiencia profesional)",
+  "tech_skills": ["..."],
+  "soft_skills": ["..."],
+  "experiences": [{"role":"","company":"","period":"","description":""}]
+}
+En español rioplatense. No inventes. Si no hay datos, devolvé arrays vacíos.`;
+
+    const userMsg = `Puesto objetivo: ${(cand as any).jobs?.title ?? "-"} en ${(cand as any).jobs?.clients?.name ?? "-"}.\nAnalizá el CV adjunto de ${cand.full_name}.`;
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: [
+            { type: "text", text: userMsg },
+            { type: "image_url", image_url: { url: `data:${mime};base64,${b64}` } },
+          ] },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      if (res.status === 429) throw new Error("Límite de uso de IA alcanzado.");
+      if (res.status === 402) throw new Error("Sin créditos de IA.");
+      throw new Error(`AI error ${res.status}: ${txt.slice(0, 200)}`);
+    }
+    const json = await res.json();
+    let raw: string = json?.choices?.[0]?.message?.content ?? "{}";
+    raw = raw.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+    let parsed: any = {};
+    try { parsed = JSON.parse(raw); } catch { parsed = {}; }
+
+    const summary = String(parsed.summary ?? "").trim();
+    const tech: string[] = Array.isArray(parsed.tech_skills) ? parsed.tech_skills.map(String) : [];
+    const soft: string[] = Array.isArray(parsed.soft_skills) ? parsed.soft_skills.map(String) : [];
+    const experiences: any[] = Array.isArray(parsed.experiences) ? parsed.experiences : [];
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Update summary into ai_profile (merge)
+    const { data: existing } = await supabaseAdmin.from("candidates").select("ai_profile").eq("id", cand.id).single();
+    const prevProfile = (existing?.ai_profile as any) || {};
+    await supabaseAdmin.from("candidates").update({
+      summary,
+      ai_profile: { ...prevProfile, summary, tech_skills: tech, soft_skills: soft },
+    }).eq("id", cand.id);
+
+    // Replace skills + experiences
+    await supabaseAdmin.from("candidate_skills").delete().eq("candidate_id", cand.id);
+    const skillRows = [
+      ...tech.map((s) => ({ candidate_id: cand.id, skill_name: s, category: "tech" })),
+      ...soft.map((s) => ({ candidate_id: cand.id, skill_name: s, category: "soft" })),
+    ].filter((r) => r.skill_name);
+    if (skillRows.length) await supabaseAdmin.from("candidate_skills").insert(skillRows);
+
+    await supabaseAdmin.from("candidate_experiences").delete().eq("candidate_id", cand.id);
+    const expRows = experiences
+      .map((e) => ({
+        candidate_id: cand.id,
+        role: String(e.role ?? "").trim(),
+        company: String(e.company ?? "").trim() || null,
+        period: String(e.period ?? "").trim() || null,
+        description: String(e.description ?? "").trim() || null,
+      }))
+      .filter((e) => e.role);
+    if (expRows.length) await supabaseAdmin.from("candidate_experiences").insert(expRows);
+
+    return { summary, tech, soft, experiences: expRows.length };
+  });
