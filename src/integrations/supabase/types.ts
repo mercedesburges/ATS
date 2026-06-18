@@ -229,6 +229,7 @@ export type Database = {
         Row: {
           ai_profile: Json | null
           auth_user_id: string | null
+          birth_date: string | null
           created_at: string
           current_stage_id: string | null
           cv_url: string | null
@@ -242,6 +243,7 @@ export type Database = {
           linkedin_linked_at: string | null
           linkedin_sub: string | null
           linkedin_url: string | null
+          location: string | null
           phone: string | null
           photo_url: string | null
           profile_validated_at: string | null
@@ -253,6 +255,7 @@ export type Database = {
         Insert: {
           ai_profile?: Json | null
           auth_user_id?: string | null
+          birth_date?: string | null
           created_at?: string
           current_stage_id?: string | null
           cv_url?: string | null
@@ -266,6 +269,7 @@ export type Database = {
           linkedin_linked_at?: string | null
           linkedin_sub?: string | null
           linkedin_url?: string | null
+          location?: string | null
           phone?: string | null
           photo_url?: string | null
           profile_validated_at?: string | null
@@ -277,6 +281,7 @@ export type Database = {
         Update: {
           ai_profile?: Json | null
           auth_user_id?: string | null
+          birth_date?: string | null
           created_at?: string
           current_stage_id?: string | null
           cv_url?: string | null
@@ -290,6 +295,7 @@ export type Database = {
           linkedin_linked_at?: string | null
           linkedin_sub?: string | null
           linkedin_url?: string | null
+          location?: string | null
           phone?: string | null
           photo_url?: string | null
           profile_validated_at?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.candidates ADD COLUMN IF NOT EXISTS birth_date date, ADD COLUMN IF NOT EXISTS location text;
