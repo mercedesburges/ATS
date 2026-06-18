@@ -18,7 +18,7 @@ function ClientsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id,name,industry,is_active,client_members(id,invited_email,contact_area,contact_position)")
+        .select("id,name,industry,is_active,client_members(id)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -72,50 +72,28 @@ function ClientsPage() {
         ))}
       </section>
 
-      {showNew && <NewClientDialog onClose={() => setShowNew(false)} onCreated={() => qc.invalidateQueries({ queryKey: ["clients"] })} clients={clients ?? []} />}
+      {showNew && (
+        <NewClientDialog
+          onClose={() => setShowNew(false)}
+          onCreated={() => qc.invalidateQueries({ queryKey: ["clients"] })}
+        />
+      )}
     </div>
   );
 }
 
-function NewClientDialog({ onClose, onCreated, clients }: { onClose: () => void; onCreated: () => void; clients: any[] }) {
-  const [mode, setMode] = useState<"new" | "existing">("new");
-  const [companyName, setCompanyName] = useState("");
+function NewClientDialog({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [name, setName] = useState("");
   const [industry, setIndustry] = useState("");
-  const [existingClientId, setExistingClientId] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [area, setArea] = useState("");
-  const [position, setPosition] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
-      let clientId = existingClientId;
-      if (mode === "new") {
-        const { data, error } = await supabase
-          .from("clients")
-          .insert({ name: companyName, industry: industry || null })
-          .select("id")
-          .single();
-        if (error) throw error;
-        clientId = data.id;
-      }
-      // Save contact info as pending invitation row (user_id placeholder = current user as system; for now store invited_email; admin will link real user later)
-      const { data: me } = await supabase.auth.getUser();
-      const { error: memberErr } = await supabase.from("client_members").insert({
-        client_id: clientId,
-        user_id: me.user!.id, // placeholder; real linking flow in fase 2
-        invited_email: email,
-        contact_area: area || `${firstName} ${lastName}`.trim() || null,
-        contact_position: position || null,
-      });
-      // Ignore unique conflict
-      if (memberErr && !memberErr.message.includes("duplicate")) console.warn(memberErr);
-
-      toast.success("Cliente creado. Mandá la invitación al email del contacto para que se registre.");
+      const { error } = await supabase.from("clients").insert({ name, industry: industry || null });
+      if (error) throw error;
+      toast.success("Cliente creado. Ahora podés agregarle contactos desde su ficha.");
       onCreated();
       onClose();
     } catch (err: any) {
@@ -127,67 +105,34 @@ function NewClientDialog({ onClose, onCreated, clients }: { onClose: () => void;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center p-4">
-      <div className="bg-background w-full max-w-lg rounded-3xl border border-border max-h-[90vh] overflow-y-auto">
+      <div className="bg-background w-full max-w-md rounded-3xl border border-border">
         <div className="p-6 border-b border-border flex justify-between items-center">
           <h2 className="font-display text-2xl">Nuevo cliente</h2>
           <button onClick={onClose} className="size-8 rounded-full hover:bg-muted grid place-items-center"><X className="size-4" /></button>
         </div>
-        <form onSubmit={submit} className="p-6 space-y-5">
-          <div className="flex bg-muted rounded-full p-1">
-            <button type="button" onClick={() => setMode("new")} className={`flex-1 py-2 rounded-full text-xs font-bold ${mode === "new" ? "bg-white shadow-sm" : "text-muted-foreground"}`}>Empresa nueva</button>
-            <button type="button" onClick={() => setMode("existing")} className={`flex-1 py-2 rounded-full text-xs font-bold ${mode === "existing" ? "bg-white shadow-sm" : "text-muted-foreground"}`}>Empresa existente</button>
+        <form onSubmit={submit} className="p-6 space-y-4">
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Nombre de la empresa</label>
+            <input
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
           </div>
-
-          {mode === "new" ? (
-            <>
-              <Field label="Nombre de la empresa" value={companyName} onChange={setCompanyName} required />
-              <Field label="Industria (opcional)" value={industry} onChange={setIndustry} />
-            </>
-          ) : (
-            <div>
-              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Empresa</label>
-              <select required value={existingClientId} onChange={(e) => setExistingClientId(e.target.value)} className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm">
-                <option value="">Seleccioná una empresa</option>
-                {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-          )}
-
-          <div className="pt-2 border-t border-border">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Contacto del cliente</p>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Nombre" value={firstName} onChange={setFirstName} required />
-              <Field label="Apellido" value={lastName} onChange={setLastName} required />
-            </div>
-            <div className="mt-3">
-              <Field label="Email" type="email" value={email} onChange={setEmail} required />
-            </div>
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              <Field label="Área" value={area} onChange={setArea} />
-              <Field label="Posición" value={position} onChange={setPosition} />
-            </div>
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Industria (opcional)</label>
+            <input
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
           </div>
-
           <button type="submit" disabled={loading} className="w-full py-3 bg-primary text-primary-foreground rounded-full text-sm font-bold disabled:opacity-50">
             {loading ? "..." : "Crear cliente"}
           </button>
         </form>
       </div>
-    </div>
-  );
-}
-
-function Field({ label, value, onChange, type = "text", required = false }: { label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean }) {
-  return (
-    <div>
-      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</label>
-      <input
-        type={type}
-        required={required}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-      />
     </div>
   );
 }

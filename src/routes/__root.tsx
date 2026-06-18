@@ -58,8 +58,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Kindred — Plataforma de Recruiting" },
-      { name: "description", content: "Presentación de candidatos para reclutadores premium." },
+      { title: "Vividtalent — Cercanía real y datos precisos" },
+      { name: "description", content: "La forma más ágil y fácil de evaluar candidatos a fondo antes de la primera reunión." },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
