@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Briefcase, X, ArrowLeft, UserPlus, Mail, Pencil, Trash2, Globe, Building2, Users as UsersIcon, ChevronDown, Upload } from "lucide-react";
