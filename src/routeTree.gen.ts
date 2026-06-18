@@ -24,6 +24,7 @@ import { Route as AppAdminContactsRouteImport } from './routes/app.admin.contact
 import { Route as AppAdminCandidatesRouteImport } from './routes/app.admin.candidates'
 import { Route as AppAdminAutomationsRouteImport } from './routes/app.admin.automations'
 import { Route as AppAdminClientsIndexRouteImport } from './routes/app.admin.clients.index'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AppPortalJobsJobIdRouteImport } from './routes/app.portal.jobs.$jobId'
 import { Route as AppAdminJobsJobIdRouteImport } from './routes/app.admin.jobs.$jobId'
 import { Route as AppAdminClientsClientIdRouteImport } from './routes/app.admin.clients.$clientId'
@@ -105,6 +106,12 @@ const AppAdminClientsIndexRoute = AppAdminClientsIndexRouteImport.update({
   path: '/admin/clients/',
   getParentRoute: () => AppRoute,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppPortalJobsJobIdRoute = AppPortalJobsJobIdRouteImport.update({
   id: '/portal/jobs/$jobId',
   path: '/portal/jobs/$jobId',
@@ -152,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/clients/$clientId': typeof AppAdminClientsClientIdRoute
   '/app/admin/jobs/$jobId': typeof AppAdminJobsJobIdRoute
   '/app/portal/jobs/$jobId': typeof AppPortalJobsJobIdRouteWithChildren
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/app/admin/clients/': typeof AppAdminClientsIndexRoute
   '/app/portal/jobs/$jobId/candidates/$candidateId': typeof AppPortalJobsJobIdCandidatesCandidateIdRoute
 }
@@ -172,6 +180,7 @@ export interface FileRoutesByTo {
   '/app/admin/clients/$clientId': typeof AppAdminClientsClientIdRoute
   '/app/admin/jobs/$jobId': typeof AppAdminJobsJobIdRoute
   '/app/portal/jobs/$jobId': typeof AppPortalJobsJobIdRouteWithChildren
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/app/admin/clients': typeof AppAdminClientsIndexRoute
   '/app/portal/jobs/$jobId/candidates/$candidateId': typeof AppPortalJobsJobIdCandidatesCandidateIdRoute
 }
@@ -195,6 +204,7 @@ export interface FileRoutesById {
   '/app/admin/clients/$clientId': typeof AppAdminClientsClientIdRoute
   '/app/admin/jobs/$jobId': typeof AppAdminJobsJobIdRoute
   '/app/portal/jobs/$jobId': typeof AppPortalJobsJobIdRouteWithChildren
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/app/admin/clients/': typeof AppAdminClientsIndexRoute
   '/app/portal/jobs/$jobId/candidates/$candidateId': typeof AppPortalJobsJobIdCandidatesCandidateIdRoute
 }
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/app/admin/clients/$clientId'
     | '/app/admin/jobs/$jobId'
     | '/app/portal/jobs/$jobId'
+    | '/lovable/email/queue/process'
     | '/app/admin/clients/'
     | '/app/portal/jobs/$jobId/candidates/$candidateId'
   fileRoutesByTo: FileRoutesByTo
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/app/admin/clients/$clientId'
     | '/app/admin/jobs/$jobId'
     | '/app/portal/jobs/$jobId'
+    | '/lovable/email/queue/process'
     | '/app/admin/clients'
     | '/app/portal/jobs/$jobId/candidates/$candidateId'
   id:
@@ -261,6 +273,7 @@ export interface FileRouteTypes {
     | '/app/admin/clients/$clientId'
     | '/app/admin/jobs/$jobId'
     | '/app/portal/jobs/$jobId'
+    | '/lovable/email/queue/process'
     | '/app/admin/clients/'
     | '/app/portal/jobs/$jobId/candidates/$candidateId'
   fileRoutesById: FileRoutesById
@@ -269,6 +282,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -377,6 +391,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/admin/clients/'
       preLoaderRoute: typeof AppAdminClientsIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app/portal/jobs/$jobId': {
       id: '/app/portal/jobs/$jobId'
@@ -501,6 +522,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
