@@ -153,9 +153,131 @@ function ClientDetail() {
           onCreated={() => qc.invalidateQueries({ queryKey: ["client-contacts", clientId] })}
         />
       )}
+      {showEdit && client && (
+        <EditClientDialog
+          client={client}
+          onClose={() => setShowEdit(false)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ["client", clientId] });
+            qc.invalidateQueries({ queryKey: ["clients"] });
+          }}
+        />
+      )}
+      {showDelete && (
+        <DeleteClientDialog
+          clientId={clientId}
+          clientName={client?.name ?? ""}
+          onClose={() => setShowDelete(false)}
+          onDeleted={() => {
+            qc.invalidateQueries({ queryKey: ["clients"] });
+            navigate({ to: "/app/admin/clients" });
+          }}
+        />
+      )}
     </div>
   );
 }
+
+function EditClientDialog({ client, onClose, onSaved }: { client: any; onClose: () => void; onSaved: () => void }) {
+  const [name, setName] = useState(client.name ?? "");
+  const [industry, setIndustry] = useState(client.industry ?? "");
+  const [website, setWebsite] = useState(client.website ?? "");
+  const [isActive, setIsActive] = useState<boolean>(client.is_active ?? true);
+  const [loading, setLoading] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .update({ name, industry: industry || null, website: website || null, is_active: isActive })
+        .eq("id", client.id);
+      if (error) throw error;
+      toast.success("Cliente actualizado.");
+      onSaved();
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center p-4">
+      <div className="bg-background w-full max-w-md rounded-3xl border border-border">
+        <div className="p-6 border-b border-border flex justify-between items-center">
+          <h2 className="font-display text-2xl">Editar cliente</h2>
+          <button onClick={onClose} className="size-8 rounded-full hover:bg-muted grid place-items-center"><X className="size-4" /></button>
+        </div>
+        <form onSubmit={submit} className="p-6 space-y-4">
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Nombre de la empresa</label>
+            <input required value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+          </div>
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Industria (opcional)</label>
+            <input value={industry} onChange={(e) => setIndustry(e.target.value)} className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+          </div>
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Website (opcional)</label>
+            <input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://..." className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+          </div>
+          <label className="flex items-center gap-3 text-sm">
+            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="size-4" />
+            Cliente activo
+          </label>
+          <button type="submit" disabled={loading} className="w-full py-3 bg-primary text-primary-foreground rounded-full text-sm font-bold disabled:opacity-50">
+            {loading ? "..." : "Guardar cambios"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function DeleteClientDialog({ clientId, clientName, onClose, onDeleted }: { clientId: string; clientName: string; onClose: () => void; onDeleted: () => void }) {
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function doDelete() {
+    setLoading(true);
+    try {
+      const { error } = await supabase.from("clients").delete().eq("id", clientId);
+      if (error) throw error;
+      toast.success("Cliente eliminado.");
+      onDeleted();
+    } catch (err: any) {
+      toast.error(err.message ?? "No se pudo eliminar");
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center p-4">
+      <div className="bg-background w-full max-w-md rounded-3xl border border-border">
+        <div className="p-6 border-b border-border flex justify-between items-center">
+          <h2 className="font-display text-2xl">Borrar cliente</h2>
+          <button onClick={onClose} className="size-8 rounded-full hover:bg-muted grid place-items-center"><X className="size-4" /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Esta acción borra <span className="font-bold text-foreground">{clientName}</span>, sus contactos, puestos y candidatos asociados. No se puede deshacer.
+          </p>
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Escribí <span className="text-destructive">BORRAR</span> para confirmar</label>
+            <input value={confirm} onChange={(e) => setConfirm(e.target.value)} className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-destructive/20 focus:border-destructive" />
+          </div>
+          <div className="flex gap-3">
+            <button onClick={onClose} className="flex-1 py-3 bg-white border border-border rounded-full text-sm font-bold">Cancelar</button>
+            <button onClick={doDelete} disabled={loading || confirm !== "BORRAR"} className="flex-1 py-3 bg-destructive text-destructive-foreground rounded-full text-sm font-bold disabled:opacity-50">
+              {loading ? "..." : "Borrar definitivamente"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function NewJobDialog({ clientId, onClose, onCreated }: { clientId: string; onClose: () => void; onCreated: () => void }) {
   const [title, setTitle] = useState("");
