@@ -245,28 +245,37 @@ export type Database = {
           client_id: string
           contact_area: string | null
           contact_position: string | null
+          contact_type: Database["public"]["Enums"]["contact_type"] | null
           created_at: string
+          first_name: string | null
           id: string
           invited_email: string | null
-          user_id: string
+          last_name: string | null
+          user_id: string | null
         }
         Insert: {
           client_id: string
           contact_area?: string | null
           contact_position?: string | null
+          contact_type?: Database["public"]["Enums"]["contact_type"] | null
           created_at?: string
+          first_name?: string | null
           id?: string
           invited_email?: string | null
-          user_id: string
+          last_name?: string | null
+          user_id?: string | null
         }
         Update: {
           client_id?: string
           contact_area?: string | null
           contact_position?: string | null
+          contact_type?: Database["public"]["Enums"]["contact_type"] | null
           created_at?: string
+          first_name?: string | null
           id?: string
           invited_email?: string | null
-          user_id?: string
+          last_name?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -521,6 +530,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "client"
       candidate_visibility: "draft" | "published"
+      contact_type: "hr" | "hiring_manager" | "team_member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -650,6 +660,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "client"],
       candidate_visibility: ["draft", "published"],
+      contact_type: ["hr", "hiring_manager", "team_member"],
     },
   },
 } as const
