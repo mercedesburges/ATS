@@ -115,6 +115,7 @@ En español rioplatense. No inventes datos. Si no hay puesto objetivo, hacé hig
     try { parsed = JSON.parse(raw); } catch { parsed = {}; }
 
     const summary = String(parsed.summary ?? "").trim();
+    const highlights: string[] = Array.isArray(parsed.highlights) ? parsed.highlights.map(String).filter(Boolean) : [];
     const tech: string[] = Array.isArray(parsed.tech_skills) ? parsed.tech_skills.map(String) : [];
     const soft: string[] = Array.isArray(parsed.soft_skills) ? parsed.soft_skills.map(String) : [];
     const experiences: any[] = Array.isArray(parsed.experiences) ? parsed.experiences : [];
@@ -126,7 +127,7 @@ En español rioplatense. No inventes datos. Si no hay puesto objetivo, hacé hig
     const prevProfile = (existing?.ai_profile as any) || {};
     await supabaseAdmin.from("candidates").update({
       summary,
-      ai_profile: { ...prevProfile, summary, tech_skills: tech, soft_skills: soft },
+      ai_profile: { ...prevProfile, summary, highlights, tech_skills: tech, soft_skills: soft },
     }).eq("id", cand.id);
 
     // Replace skills + experiences
