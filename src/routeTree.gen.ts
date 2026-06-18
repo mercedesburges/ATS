@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppPortalIndexRouteImport } from './routes/app.portal.index'
 import { Route as AppAdminIndexRouteImport } from './routes/app.admin.index'
+import { Route as AppAdminStagesRouteImport } from './routes/app.admin.stages'
 import { Route as AppAdminMetricsRouteImport } from './routes/app.admin.metrics'
 import { Route as AppAdminJobsRouteImport } from './routes/app.admin.jobs'
 import { Route as AppAdminContactsRouteImport } from './routes/app.admin.contacts'
@@ -55,6 +56,11 @@ const AppPortalIndexRoute = AppPortalIndexRouteImport.update({
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminStagesRoute = AppAdminStagesRouteImport.update({
+  id: '/admin/stages',
+  path: '/admin/stages',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminMetricsRoute = AppAdminMetricsRouteImport.update({
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/contacts': typeof AppAdminContactsRoute
   '/app/admin/jobs': typeof AppAdminJobsRouteWithChildren
   '/app/admin/metrics': typeof AppAdminMetricsRoute
+  '/app/admin/stages': typeof AppAdminStagesRoute
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/portal/': typeof AppPortalIndexRoute
   '/app/admin/candidates/$candidateId': typeof AppAdminCandidatesCandidateIdRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/app/admin/contacts': typeof AppAdminContactsRoute
   '/app/admin/jobs': typeof AppAdminJobsRouteWithChildren
   '/app/admin/metrics': typeof AppAdminMetricsRoute
+  '/app/admin/stages': typeof AppAdminStagesRoute
   '/app/admin': typeof AppAdminIndexRoute
   '/app/portal': typeof AppPortalIndexRoute
   '/app/admin/candidates/$candidateId': typeof AppAdminCandidatesCandidateIdRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/app/admin/contacts': typeof AppAdminContactsRoute
   '/app/admin/jobs': typeof AppAdminJobsRouteWithChildren
   '/app/admin/metrics': typeof AppAdminMetricsRoute
+  '/app/admin/stages': typeof AppAdminStagesRoute
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/portal/': typeof AppPortalIndexRoute
   '/app/admin/candidates/$candidateId': typeof AppAdminCandidatesCandidateIdRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/app/admin/contacts'
     | '/app/admin/jobs'
     | '/app/admin/metrics'
+    | '/app/admin/stages'
     | '/app/admin/'
     | '/app/portal/'
     | '/app/admin/candidates/$candidateId'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/app/admin/contacts'
     | '/app/admin/jobs'
     | '/app/admin/metrics'
+    | '/app/admin/stages'
     | '/app/admin'
     | '/app/portal'
     | '/app/admin/candidates/$candidateId'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/app/admin/contacts'
     | '/app/admin/jobs'
     | '/app/admin/metrics'
+    | '/app/admin/stages'
     | '/app/admin/'
     | '/app/portal/'
     | '/app/admin/candidates/$candidateId'
@@ -279,6 +291,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/app/admin/'
       preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin/stages': {
+      id: '/app/admin/stages'
+      path: '/admin/stages'
+      fullPath: '/app/admin/stages'
+      preLoaderRoute: typeof AppAdminStagesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/admin/metrics': {
@@ -403,6 +422,7 @@ interface AppRouteChildren {
   AppAdminContactsRoute: typeof AppAdminContactsRoute
   AppAdminJobsRoute: typeof AppAdminJobsRouteWithChildren
   AppAdminMetricsRoute: typeof AppAdminMetricsRoute
+  AppAdminStagesRoute: typeof AppAdminStagesRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
   AppPortalIndexRoute: typeof AppPortalIndexRoute
   AppAdminClientsClientIdRoute: typeof AppAdminClientsClientIdRoute
@@ -417,6 +437,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminContactsRoute: AppAdminContactsRoute,
   AppAdminJobsRoute: AppAdminJobsRouteWithChildren,
   AppAdminMetricsRoute: AppAdminMetricsRoute,
+  AppAdminStagesRoute: AppAdminStagesRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
   AppPortalIndexRoute: AppPortalIndexRoute,
   AppAdminClientsClientIdRoute: AppAdminClientsClientIdRoute,
