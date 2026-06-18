@@ -43,6 +43,7 @@ function CandidateEditor() {
   const photoRef = useRef<HTMLInputElement>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editingContact, setEditingContact] = useState(false);
 
   async function uploadPhoto(file: File) {
     if (!candidate) return;
