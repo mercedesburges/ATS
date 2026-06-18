@@ -220,8 +220,33 @@ function EditClientDialog({ client, onClose, onSaved }: { client: any; onClose: 
   const [name, setName] = useState(client.name ?? "");
   const [industry, setIndustry] = useState(client.industry ?? "");
   const [website, setWebsite] = useState(client.website ?? "");
-  const [isActive, setIsActive] = useState<boolean>(client.is_active ?? true);
+  const [logoPath, setLogoPath] = useState<string | null>(client.logo_url ?? null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancel = false;
+    if (!logoPath) { setLogoPreview(null); return; }
+    supabase.storage.from("client-logos").createSignedUrl(logoPath, 60 * 60).then(({ data }) => {
+      if (!cancel) setLogoPreview(data?.signedUrl ?? null);
+    });
+    return () => { cancel = true; };
+  }, [logoPath]);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "png";
+      const path = `${client.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("client-logos").upload(path, file, { upsert: true });
+      if (error) throw error;
+      setLogoPath(path);
+      toast.success("Logo cargado");
+    } catch (err: any) {
+      toast.error(err.message ?? "No se pudo subir el logo");
+    } finally { setUploading(false); }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -229,7 +254,7 @@ function EditClientDialog({ client, onClose, onSaved }: { client: any; onClose: 
     try {
       const { error } = await supabase
         .from("clients")
-        .update({ name, industry: industry || null, website: website || null, is_active: isActive })
+        .update({ name, industry: industry || null, website: website || null, logo_url: logoPath })
         .eq("id", client.id);
       if (error) throw error;
       toast.success("Cliente actualizado.");
@@ -241,13 +266,25 @@ function EditClientDialog({ client, onClose, onSaved }: { client: any; onClose: 
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center p-4">
-      <div className="bg-background w-full max-w-md rounded-3xl border border-border">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center p-4 overflow-y-auto">
+      <div className="bg-background w-full max-w-md rounded-3xl border border-border my-8">
         <div className="p-6 border-b border-border flex justify-between items-center">
           <h2 className="font-display text-2xl">Editar cliente</h2>
           <button onClick={onClose} className="size-8 rounded-full hover:bg-muted grid place-items-center"><X className="size-4" /></button>
         </div>
         <form onSubmit={submit} className="p-6 space-y-4">
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Logo</label>
+            <div className="mt-2 flex items-center gap-3">
+              <div className="size-16 rounded-2xl bg-stone-100 grid place-items-center overflow-hidden shrink-0">
+                {logoPreview ? <img src={logoPreview} alt="" className="size-full object-cover" /> : <Building2 className="size-5 text-muted-foreground" />}
+              </div>
+              <label className="flex-1 cursor-pointer border border-dashed border-border rounded-2xl py-3 px-4 text-xs text-muted-foreground hover:border-primary/30 hover:text-foreground inline-flex items-center justify-center gap-2">
+                <Upload className="size-3.5" /> {uploading ? "Subiendo..." : logoPath ? "Reemplazar logo" : "Subir logo"}
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+              </label>
+            </div>
+          </div>
           <div>
             <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Nombre de la empresa</label>
             <input required value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
@@ -260,10 +297,9 @@ function EditClientDialog({ client, onClose, onSaved }: { client: any; onClose: 
             <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Website (opcional)</label>
             <input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://..." className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
           </div>
-          <label className="flex items-center gap-3 text-sm">
-            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="size-4" />
-            Cliente activo
-          </label>
+          <p className="text-[11px] text-muted-foreground bg-stone-50 rounded-xl p-3">
+            El estado <span className="font-bold text-foreground">activo / inactivo</span> ahora se calcula automáticamente según cuántos puestos abiertos tenga el cliente.
+          </p>
           <button type="submit" disabled={loading} className="w-full py-3 bg-primary text-primary-foreground rounded-full text-sm font-bold disabled:opacity-50">
             {loading ? "..." : "Guardar cambios"}
           </button>
