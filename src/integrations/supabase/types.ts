@@ -141,6 +141,7 @@ export type Database = {
       candidate_skills: {
         Row: {
           candidate_id: string
+          category: string
           id: string
           is_critical: boolean
           position: number
@@ -149,6 +150,7 @@ export type Database = {
         }
         Insert: {
           candidate_id: string
+          category?: string
           id?: string
           is_critical?: boolean
           position?: number
@@ -157,6 +159,7 @@ export type Database = {
         }
         Update: {
           candidate_id?: string
+          category?: string
           id?: string
           is_critical?: boolean
           position?: number
