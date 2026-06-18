@@ -9,14 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AppCandidateRouteImport } from './routes/app.candidate'
 import { Route as AppPortalIndexRouteImport } from './routes/app.portal.index'
 import { Route as AppCandidateIndexRouteImport } from './routes/app.candidate.index'
 import { Route as AppAdminIndexRouteImport } from './routes/app.admin.index'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AppAdminStagesRouteImport } from './routes/app.admin.stages'
 import { Route as AppAdminMetricsRouteImport } from './routes/app.admin.metrics'
 import { Route as AppAdminJobsRouteImport } from './routes/app.admin.jobs'
@@ -24,12 +27,20 @@ import { Route as AppAdminContactsRouteImport } from './routes/app.admin.contact
 import { Route as AppAdminCandidatesRouteImport } from './routes/app.admin.candidates'
 import { Route as AppAdminAutomationsRouteImport } from './routes/app.admin.automations'
 import { Route as AppAdminClientsIndexRouteImport } from './routes/app.admin.clients.index'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AppPortalJobsJobIdRouteImport } from './routes/app.portal.jobs.$jobId'
 import { Route as AppAdminJobsJobIdRouteImport } from './routes/app.admin.jobs.$jobId'
 import { Route as AppAdminClientsClientIdRouteImport } from './routes/app.admin.clients.$clientId'
 import { Route as AppAdminCandidatesCandidateIdRouteImport } from './routes/app.admin.candidates.$candidateId'
 import { Route as AppPortalJobsJobIdCandidatesCandidateIdRouteImport } from './routes/app.portal.jobs.$jobId.candidates.$candidateId'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -50,6 +61,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppCandidateRoute = AppCandidateRouteImport.update({
   id: '/candidate',
   path: '/candidate',
@@ -69,6 +85,11 @@ const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
   getParentRoute: () => AppRoute,
+} as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppAdminStagesRoute = AppAdminStagesRouteImport.update({
   id: '/admin/stages',
@@ -105,6 +126,24 @@ const AppAdminClientsIndexRoute = AppAdminClientsIndexRouteImport.update({
   path: '/admin/clients/',
   getParentRoute: () => AppRoute,
 } as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppPortalJobsJobIdRoute = AppPortalJobsJobIdRouteImport.update({
   id: '/portal/jobs/$jobId',
   path: '/portal/jobs/$jobId',
@@ -137,7 +176,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/app/candidate': typeof AppCandidateRouteWithChildren
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/': typeof AppIndexRoute
   '/app/admin/automations': typeof AppAdminAutomationsRoute
   '/app/admin/candidates': typeof AppAdminCandidatesRouteWithChildren
@@ -145,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/jobs': typeof AppAdminJobsRouteWithChildren
   '/app/admin/metrics': typeof AppAdminMetricsRoute
   '/app/admin/stages': typeof AppAdminStagesRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/candidate/': typeof AppCandidateIndexRoute
   '/app/portal/': typeof AppPortalIndexRoute
@@ -152,12 +194,17 @@ export interface FileRoutesByFullPath {
   '/app/admin/clients/$clientId': typeof AppAdminClientsClientIdRoute
   '/app/admin/jobs/$jobId': typeof AppAdminJobsJobIdRoute
   '/app/portal/jobs/$jobId': typeof AppPortalJobsJobIdRouteWithChildren
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/app/admin/clients/': typeof AppAdminClientsIndexRoute
   '/app/portal/jobs/$jobId/candidates/$candidateId': typeof AppPortalJobsJobIdCandidatesCandidateIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/unsubscribe': typeof UnsubscribeRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app': typeof AppIndexRoute
   '/app/admin/automations': typeof AppAdminAutomationsRoute
   '/app/admin/candidates': typeof AppAdminCandidatesRouteWithChildren
@@ -165,6 +212,7 @@ export interface FileRoutesByTo {
   '/app/admin/jobs': typeof AppAdminJobsRouteWithChildren
   '/app/admin/metrics': typeof AppAdminMetricsRoute
   '/app/admin/stages': typeof AppAdminStagesRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/app/admin': typeof AppAdminIndexRoute
   '/app/candidate': typeof AppCandidateIndexRoute
   '/app/portal': typeof AppPortalIndexRoute
@@ -172,6 +220,9 @@ export interface FileRoutesByTo {
   '/app/admin/clients/$clientId': typeof AppAdminClientsClientIdRoute
   '/app/admin/jobs/$jobId': typeof AppAdminJobsJobIdRoute
   '/app/portal/jobs/$jobId': typeof AppPortalJobsJobIdRouteWithChildren
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/app/admin/clients': typeof AppAdminClientsIndexRoute
   '/app/portal/jobs/$jobId/candidates/$candidateId': typeof AppPortalJobsJobIdCandidatesCandidateIdRoute
 }
@@ -180,7 +231,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/app/candidate': typeof AppCandidateRouteWithChildren
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/': typeof AppIndexRoute
   '/app/admin/automations': typeof AppAdminAutomationsRoute
   '/app/admin/candidates': typeof AppAdminCandidatesRouteWithChildren
@@ -188,6 +241,7 @@ export interface FileRoutesById {
   '/app/admin/jobs': typeof AppAdminJobsRouteWithChildren
   '/app/admin/metrics': typeof AppAdminMetricsRoute
   '/app/admin/stages': typeof AppAdminStagesRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/candidate/': typeof AppCandidateIndexRoute
   '/app/portal/': typeof AppPortalIndexRoute
@@ -195,6 +249,9 @@ export interface FileRoutesById {
   '/app/admin/clients/$clientId': typeof AppAdminClientsClientIdRoute
   '/app/admin/jobs/$jobId': typeof AppAdminJobsJobIdRoute
   '/app/portal/jobs/$jobId': typeof AppPortalJobsJobIdRouteWithChildren
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/app/admin/clients/': typeof AppAdminClientsIndexRoute
   '/app/portal/jobs/$jobId/candidates/$candidateId': typeof AppPortalJobsJobIdCandidatesCandidateIdRoute
 }
@@ -204,7 +261,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/auth'
+    | '/unsubscribe'
     | '/app/candidate'
+    | '/email/unsubscribe'
     | '/app/'
     | '/app/admin/automations'
     | '/app/admin/candidates'
@@ -212,6 +271,7 @@ export interface FileRouteTypes {
     | '/app/admin/jobs'
     | '/app/admin/metrics'
     | '/app/admin/stages'
+    | '/lovable/email/suppression'
     | '/app/admin/'
     | '/app/candidate/'
     | '/app/portal/'
@@ -219,12 +279,17 @@ export interface FileRouteTypes {
     | '/app/admin/clients/$clientId'
     | '/app/admin/jobs/$jobId'
     | '/app/portal/jobs/$jobId'
+    | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/app/admin/clients/'
     | '/app/portal/jobs/$jobId/candidates/$candidateId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/unsubscribe'
+    | '/email/unsubscribe'
     | '/app'
     | '/app/admin/automations'
     | '/app/admin/candidates'
@@ -232,6 +297,7 @@ export interface FileRouteTypes {
     | '/app/admin/jobs'
     | '/app/admin/metrics'
     | '/app/admin/stages'
+    | '/lovable/email/suppression'
     | '/app/admin'
     | '/app/candidate'
     | '/app/portal'
@@ -239,6 +305,9 @@ export interface FileRouteTypes {
     | '/app/admin/clients/$clientId'
     | '/app/admin/jobs/$jobId'
     | '/app/portal/jobs/$jobId'
+    | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/app/admin/clients'
     | '/app/portal/jobs/$jobId/candidates/$candidateId'
   id:
@@ -246,7 +315,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/auth'
+    | '/unsubscribe'
     | '/app/candidate'
+    | '/email/unsubscribe'
     | '/app/'
     | '/app/admin/automations'
     | '/app/admin/candidates'
@@ -254,6 +325,7 @@ export interface FileRouteTypes {
     | '/app/admin/jobs'
     | '/app/admin/metrics'
     | '/app/admin/stages'
+    | '/lovable/email/suppression'
     | '/app/admin/'
     | '/app/candidate/'
     | '/app/portal/'
@@ -261,6 +333,9 @@ export interface FileRouteTypes {
     | '/app/admin/clients/$clientId'
     | '/app/admin/jobs/$jobId'
     | '/app/portal/jobs/$jobId'
+    | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/app/admin/clients/'
     | '/app/portal/jobs/$jobId/candidates/$candidateId'
   fileRoutesById: FileRoutesById
@@ -269,10 +344,23 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
+  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -301,6 +389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/candidate': {
       id: '/app/candidate'
       path: '/candidate'
@@ -328,6 +423,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/admin/'
       preLoaderRoute: typeof AppAdminIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app/admin/stages': {
       id: '/app/admin/stages'
@@ -377,6 +479,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/admin/clients/'
       preLoaderRoute: typeof AppAdminClientsIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app/portal/jobs/$jobId': {
       id: '/app/portal/jobs/$jobId'
@@ -501,6 +624,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
+  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
