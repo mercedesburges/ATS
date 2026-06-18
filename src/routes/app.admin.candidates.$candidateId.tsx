@@ -207,18 +207,38 @@ function CvSection({ candidate, onUpdate }: any) {
     } catch (e: any) { toast.error(e.message); } finally { setUploading(false); }
   }
 
+  const isPdf = candidate.cv_url && /\.pdf(\?|$)/i.test(candidate.cv_url);
+
   return (
-    <Card title="CV (PDF)">
+    <div className="bg-white rounded-3xl border border-border p-6">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h3 className="font-display text-xl">CV</h3>
+        <div className="flex items-center gap-2">
+          {candidate.cv_url && (
+            <a href={candidate.cv_url} target="_blank" rel="noreferrer" className="px-4 py-2 bg-stone-50 border border-border rounded-full text-xs font-bold hover:bg-stone-100">
+              Abrir en pestaña nueva
+            </a>
+          )}
+          <input ref={ref} type="file" accept=".pdf,.doc,.docx" hidden onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+          <button onClick={() => ref.current?.click()} disabled={uploading} className="px-4 py-2 flex items-center gap-2 bg-primary text-primary-foreground rounded-full text-xs font-bold disabled:opacity-50">
+            <Upload className="size-3.5" /> {uploading ? "Subiendo..." : candidate.cv_url ? "Reemplazar" : "Subir CV"}
+          </button>
+        </div>
+      </div>
       {candidate.cv_url ? (
-        <a href={candidate.cv_url} target="_blank" rel="noreferrer" className="block py-3 bg-stone-50 border border-border rounded-xl text-sm font-medium text-center hover:bg-stone-100">
-          Ver CV actual
-        </a>
-      ) : <p className="text-xs text-muted-foreground mb-3">Sin CV cargado.</p>}
-      <input ref={ref} type="file" accept=".pdf,.doc,.docx" hidden onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
-      <button onClick={() => ref.current?.click()} disabled={uploading} className="mt-2 w-full py-2.5 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-full text-sm font-bold disabled:opacity-50">
-        <Upload className="size-4" /> {uploading ? "Subiendo..." : "Subir CV"}
-      </button>
-    </Card>
+        isPdf ? (
+          <iframe src={candidate.cv_url} title="CV preview" className="w-full h-[80vh] rounded-2xl border border-border bg-stone-50" />
+        ) : (
+          <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+            Vista previa no disponible para este formato. Abrilo en pestaña nueva.
+          </div>
+        )
+      ) : (
+        <div className="rounded-2xl border-2 border-dashed border-border p-16 text-center text-sm text-muted-foreground">
+          Sin CV cargado. Subí un PDF para previsualizarlo acá.
+        </div>
+      )}
+    </div>
   );
 }
 
