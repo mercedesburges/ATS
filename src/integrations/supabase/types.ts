@@ -333,6 +333,47 @@ export type Database = {
           },
         ]
       }
+      client_interview_questions: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          mode: string
+          position: number
+          question: string
+          time_limit_seconds: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          mode: string
+          position?: number
+          question: string
+          time_limit_seconds?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          mode?: string
+          position?: number
+          question?: string
+          time_limit_seconds?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_interview_questions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_members: {
         Row: {
           client_id: string
@@ -477,6 +518,7 @@ export type Database = {
           created_by: string | null
           id: string
           industry: string | null
+          interview_mode: string
           is_active: boolean
           logo_url: string | null
           name: string
@@ -488,6 +530,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           industry?: string | null
+          interview_mode?: string
           is_active?: boolean
           logo_url?: string | null
           name: string
@@ -499,6 +542,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           industry?: string | null
+          interview_mode?: string
           is_active?: boolean
           logo_url?: string | null
           name?: string
