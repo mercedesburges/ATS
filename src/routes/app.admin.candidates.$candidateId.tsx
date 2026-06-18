@@ -116,8 +116,8 @@ function PhotoSection({ candidate, onUpdate }: any) {
 
   return (
     <Card title="Foto">
-      <div className="aspect-[4/5] bg-stone-100 rounded-2xl overflow-hidden mb-3">
-        {candidate.photo_url ? <img src={candidate.photo_url} alt="" className="w-full h-full object-cover" /> : <div className="h-full grid place-items-center text-stone-400"><User className="size-12" /></div>}
+      <div className="w-40 aspect-[4/5] bg-stone-100 rounded-2xl overflow-hidden mb-3 mx-auto">
+        {candidate.photo_url ? <img src={candidate.photo_url} alt="" className="w-full h-full object-cover" /> : <div className="h-full grid place-items-center text-stone-400"><User className="size-8" /></div>}
       </div>
       <input ref={ref} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
       <button onClick={() => ref.current?.click()} disabled={uploading} className="w-full py-2.5 bg-stone-50 border border-border rounded-xl text-sm font-medium hover:bg-stone-100 disabled:opacity-50">

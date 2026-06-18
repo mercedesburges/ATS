@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Users, Plus, X, Upload, Sparkles, Linkedin } from "lucide-react";
 import { parseCv } from "@/lib/cv.functions";
 
-export const Route = createFileRoute("/app/admin/candidates")({
+export const Route = createFileRoute("/app/admin/candidates/")({
   component: CandidatesList,
 });
 
