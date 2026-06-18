@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Users, Plus, X, Upload } from "lucide-react";
+import { Users, Plus, X, Upload, Sparkles, Linkedin } from "lucide-react";
+import { parseCv } from "@/lib/cv.functions";
 
 export const Route = createFileRoute("/app/admin/candidates")({
   component: CandidatesList,
@@ -75,25 +77,47 @@ function CandidatesList() {
 }
 
 function NewCandidateDialog({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [step, setStep] = useState<"upload" | "review">("upload");
   const [jobId, setJobId] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [linkedin, setLinkedin] = useState("");
   const [headline, setHeadline] = useState("");
-  const [years, setYears] = useState("");
   const [cv, setCv] = useState<File | null>(null);
+  const [parsing, setParsing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const parseCvFn = useServerFn(parseCv);
 
   const { data: activeJobs } = useQuery({
     queryKey: ["active-jobs-min"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("jobs")
-        .select("id,title,clients(name)")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
+      const { data } = await supabase.from("jobs").select("id,title,clients(name)").eq("is_active", true).order("created_at", { ascending: false });
       return data ?? [];
     },
   });
+
+  async function handleCvUpload(file: File) {
+    setCv(file);
+    setParsing(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let bin = "";
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      const b64 = btoa(bin);
+      const result = await parseCvFn({ data: { fileBase64: b64, mimeType: file.type || "application/pdf", fileName: file.name } });
+      setFullName(result.full_name || "");
+      setEmail(result.email || "");
+      setPhone(result.phone || "");
+      setLinkedin(result.linkedin_url || "");
+      toast.success("CV analizado. Revisá los datos.");
+      setStep("review");
+    } catch (err: any) {
+      toast.error(err.message ?? "No pude leer el CV. Cargá los datos manualmente.");
+      setStep("review");
+    } finally { setParsing(false); }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -106,8 +130,9 @@ function NewCandidateDialog({ onClose, onCreated }: { onClose: () => void; onCre
         job_id: jobId,
         full_name: fullName,
         email: email || null,
+        phone: phone || null,
+        linkedin_url: linkedin || null,
         headline: headline || null,
-        years_experience: years ? parseInt(years) : null,
         current_stage_id: firstStageId,
       }).select("id").single();
       if (error) throw error;
@@ -126,6 +151,8 @@ function NewCandidateDialog({ onClose, onCreated }: { onClose: () => void; onCre
     } finally { setLoading(false); }
   }
 
+  const waLink = phone ? `https://wa.me/${phone.replace(/[^\d]/g, "")}` : "";
+
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center p-4 overflow-y-auto">
       <div className="bg-background w-full max-w-lg rounded-3xl border border-border my-8">
@@ -133,34 +160,66 @@ function NewCandidateDialog({ onClose, onCreated }: { onClose: () => void; onCre
           <h2 className="font-display text-2xl">Nuevo candidato</h2>
           <button onClick={onClose} className="size-8 rounded-full hover:bg-muted grid place-items-center"><X className="size-4" /></button>
         </div>
-        <form onSubmit={submit} className="p-6 space-y-4">
-          <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Asignar a puesto</label>
-            <select required value={jobId} onChange={(e) => setJobId(e.target.value)} className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
-              <option value="">Seleccioná un puesto activo</option>
-              {(activeJobs ?? []).map((j: any) => (
-                <option key={j.id} value={j.id}>{j.clients?.name} — {j.title}</option>
-              ))}
-            </select>
-            {activeJobs?.length === 0 && <p className="text-[11px] text-muted-foreground mt-1.5">No tenés puestos activos. Creá uno primero.</p>}
-          </div>
-          <Field label="Nombre completo" value={fullName} onChange={setFullName} required />
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Email" type="email" value={email} onChange={setEmail} />
-            <Field label="Años de experiencia" type="number" value={years} onChange={setYears} />
-          </div>
-          <Field label="Headline (ej: Senior Product Lead)" value={headline} onChange={setHeadline} />
-          <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">CV (PDF / DOC) — opcional</label>
-            <label className="mt-1 flex items-center justify-center gap-2 cursor-pointer border border-dashed border-border rounded-2xl py-3 px-4 text-xs text-muted-foreground hover:border-primary/30 hover:text-foreground">
-              <Upload className="size-3.5" /> {cv ? cv.name : "Subir archivo"}
-              <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => setCv(e.target.files?.[0] ?? null)} />
+
+        {step === "upload" && (
+          <div className="p-6 space-y-4">
+            <p className="text-sm text-muted-foreground">Subí el CV y la IA va a leer nombre, email, teléfono y LinkedIn automáticamente. Después revisás y completás lo que falte.</p>
+            <label className={`flex flex-col items-center justify-center gap-2 cursor-pointer border-2 border-dashed border-border rounded-2xl py-10 px-4 text-sm text-muted-foreground hover:border-primary/40 hover:text-foreground ${parsing ? "opacity-60 pointer-events-none" : ""}`}>
+              {parsing ? <><Sparkles className="size-5 animate-pulse text-primary" /> Analizando CV…</> : <><Upload className="size-5" /> Subir CV (PDF)</>}
+              <input type="file" accept="application/pdf" className="hidden" disabled={parsing} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCvUpload(f); }} />
             </label>
+            <button type="button" onClick={() => setStep("review")} className="w-full text-xs text-muted-foreground hover:text-foreground py-2">
+              O cargar datos manualmente sin CV →
+            </button>
           </div>
-          <button type="submit" disabled={loading} className="w-full py-3 bg-primary text-primary-foreground rounded-full text-sm font-bold disabled:opacity-50">
-            {loading ? "..." : "Crear candidato"}
-          </button>
-        </form>
+        )}
+
+        {step === "review" && (
+          <form onSubmit={submit} className="p-6 space-y-4">
+            {cv && (
+              <div className="flex items-center gap-2 text-xs bg-muted/40 rounded-2xl px-3 py-2">
+                <Sparkles className="size-3.5 text-primary" /> Datos extraídos de <span className="font-medium truncate">{cv.name}</span>
+              </div>
+            )}
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Asignar a puesto</label>
+              <select required value={jobId} onChange={(e) => setJobId(e.target.value)} className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="">Seleccioná un puesto activo</option>
+                {(activeJobs ?? []).map((j: any) => (<option key={j.id} value={j.id}>{j.clients?.name} — {j.title}</option>))}
+              </select>
+            </div>
+            <Field label="Nombre completo" value={fullName} onChange={setFullName} required />
+            <Field label="Email" type="email" value={email} onChange={setEmail} />
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Teléfono (con código de país)</label>
+              <div className="mt-1 flex gap-2">
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+5491134567890" className="flex-1 bg-white border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                {phone && (
+                  <a href={waLink} target="_blank" rel="noreferrer" className="px-4 rounded-2xl bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-600">WhatsApp</a>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">LinkedIn</label>
+              <div className="mt-1 flex gap-2">
+                <input value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://www.linkedin.com/in/..." className="flex-1 bg-white border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                {linkedin && (
+                  <a href={linkedin} target="_blank" rel="noreferrer" className="px-4 rounded-2xl bg-[#0a66c2] text-white text-xs font-bold flex items-center gap-1.5 hover:opacity-90"><Linkedin className="size-3.5" /></a>
+                )}
+              </div>
+            </div>
+            <Field label="Headline (opcional)" value={headline} onChange={setHeadline} />
+            {!cv && (
+              <label className="flex items-center justify-center gap-2 cursor-pointer border border-dashed border-border rounded-2xl py-2.5 px-4 text-xs text-muted-foreground hover:border-primary/30">
+                <Upload className="size-3.5" /> Subir CV (opcional)
+                <input type="file" accept="application/pdf,.doc,.docx" className="hidden" onChange={(e) => setCv(e.target.files?.[0] ?? null)} />
+              </label>
+            )}
+            <button type="submit" disabled={loading} className="w-full py-3 bg-primary text-primary-foreground rounded-full text-sm font-bold disabled:opacity-50">
+              {loading ? "Creando…" : "Crear candidato"}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
