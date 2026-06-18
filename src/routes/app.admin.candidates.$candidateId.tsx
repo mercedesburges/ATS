@@ -4,9 +4,23 @@ import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Plus, Trash2, User, Send, Copy, Sparkles, CheckCircle2, FileText, Briefcase, Video } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Trash2, User, Send, Copy, Sparkles, CheckCircle2, FileText, Briefcase, Video, Mail, Phone, MapPin, Cake, Pencil, X } from "lucide-react";
 import { inviteCandidate, processInterview } from "@/lib/interview.functions";
+import { analyzeCvProfile } from "@/lib/cv.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+function calcAge(birth?: string | null): number | null {
+  if (!birth) return null;
+  const d = new Date(birth);
+  if (isNaN(d.getTime())) return null;
+  const diff = Date.now() - d.getTime();
+  return Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+}
+function waLink(phone?: string | null): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/[^\d]/g, "");
+  return digits ? `https://wa.me/${digits}` : null;
+}
 
 export const Route = createFileRoute("/app/admin/candidates/$candidateId")({
   component: CandidateEditor,
@@ -29,6 +43,7 @@ function CandidateEditor() {
   const photoRef = useRef<HTMLInputElement>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editingContact, setEditingContact] = useState(false);
 
   async function uploadPhoto(file: File) {
     if (!candidate) return;
@@ -66,8 +81,8 @@ function CandidateEditor() {
     <div>
       <header className="px-8 py-6 border-b border-border">
         <Link to="/app/admin/candidates" className="text-xs text-muted-foreground inline-flex items-center gap-1"><ArrowLeft className="size-3" /> Volver</Link>
-        <div className="mt-3 flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4 min-w-0">
+        <div className="mt-3 flex items-start justify-between flex-wrap gap-4">
+          <div className="flex items-start gap-4 min-w-0">
             <button
               type="button"
               onClick={() => photoRef.current?.click()}
@@ -83,6 +98,7 @@ function CandidateEditor() {
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground truncate">{candidate.jobs?.clients?.name} · {candidate.jobs?.title}</p>
               <h1 className="font-display text-3xl mt-0.5 truncate">{candidate.full_name}</h1>
+              <ContactStrip candidate={candidate} onEdit={() => setEditingContact(true)} />
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -99,6 +115,8 @@ function CandidateEditor() {
         </div>
       </header>
 
+      {editingContact && <ContactEditModal candidate={candidate} onClose={() => setEditingContact(false)} onSaved={() => { setEditingContact(false); refetch(); }} />}
+
       <div className="p-8">
         <Tabs defaultValue="cv" className="w-full">
           <TabsList className="mb-6">
@@ -111,12 +129,8 @@ function CandidateEditor() {
             <CvSection candidate={candidate} onUpdate={refetch} />
           </TabsContent>
 
-          <TabsContent value="perfil" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <BasicInfo candidate={candidate} onUpdate={refetch} />
-              <SkillsSection candidate={candidate} onUpdate={refetch} />
-            </div>
-            <ExperienceSection candidate={candidate} onUpdate={refetch} />
+          <TabsContent value="perfil">
+            <ProfileSkillsTab candidate={candidate} onUpdate={refetch} />
           </TabsContent>
 
           <TabsContent value="entrevista" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -129,17 +143,67 @@ function CandidateEditor() {
   );
 }
 
-function VisibilityToggle({ candidateId, visibility, onChange }: any) {
-  async function toggle() {
-    const next = visibility === "published" ? "draft" : "published";
-    await supabase.from("candidates").update({ visibility: next }).eq("id", candidateId);
-    toast.success(next === "published" ? "Visible al cliente" : "Oculto del cliente");
-    onChange();
+function ContactStrip({ candidate, onEdit }: any) {
+  const age = calcAge(candidate.birth_date);
+  const wa = waLink(candidate.phone);
+  const items: React.ReactNode[] = [];
+  if (age !== null) items.push(<span key="age" className="inline-flex items-center gap-1"><Cake className="size-3" />{age} años</span>);
+  if (candidate.location) items.push(<span key="loc" className="inline-flex items-center gap-1"><MapPin className="size-3" />{candidate.location}</span>);
+  if (candidate.email) items.push(<a key="em" href={`mailto:${candidate.email}`} className="inline-flex items-center gap-1 hover:text-primary"><Mail className="size-3" />{candidate.email}</a>);
+  if (candidate.phone) items.push(
+    wa
+      ? <a key="ph" href={wa} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-emerald-600"><Phone className="size-3" />{candidate.phone}</a>
+      : <span key="ph" className="inline-flex items-center gap-1"><Phone className="size-3" />{candidate.phone}</span>
+  );
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+      {items.length === 0 && <span className="italic">Sin datos personales cargados</span>}
+      {items}
+      <button onClick={onEdit} className="inline-flex items-center gap-1 text-primary hover:underline"><Pencil className="size-3" />Editar</button>
+    </div>
+  );
+}
+
+function ContactEditModal({ candidate, onClose, onSaved }: any) {
+  const [form, setForm] = useState({
+    full_name: candidate.full_name ?? "",
+    email: candidate.email ?? "",
+    phone: candidate.phone ?? "",
+    location: candidate.location ?? "",
+    birth_date: candidate.birth_date ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+  async function save() {
+    setSaving(true);
+    const { error } = await supabase.from("candidates").update({
+      full_name: form.full_name,
+      email: form.email || null,
+      phone: form.phone || null,
+      location: form.location || null,
+      birth_date: form.birth_date || null,
+    }).eq("id", candidate.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Datos actualizados");
+    onSaved();
   }
   return (
-    <button onClick={toggle} className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider ${visibility === "published" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-      {visibility === "published" ? "Visible al cliente ✓" : "Borrador — Publicar"}
-    </button>
+    <div className="fixed inset-0 z-50 bg-black/40 grid place-items-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-3xl border border-border p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-display text-xl">Editar datos personales</h3>
+          <button onClick={onClose} className="size-8 rounded-full grid place-items-center hover:bg-stone-100"><X className="size-4" /></button>
+        </div>
+        <div className="space-y-3">
+          <Input label="Nombre completo" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
+          <Input label="Email" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
+          <Input label="Celular (con código país, ej +5491134567890)" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+          <Input label="Ciudad / Ubicación" value={form.location} onChange={(v) => setForm({ ...form, location: v })} />
+          <Input label="Fecha de nacimiento" type="date" value={form.birth_date} onChange={(v) => setForm({ ...form, birth_date: v })} />
+          <button onClick={save} disabled={saving} className="w-full py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-bold disabled:opacity-50">{saving ? "Guardando..." : "Guardar"}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 

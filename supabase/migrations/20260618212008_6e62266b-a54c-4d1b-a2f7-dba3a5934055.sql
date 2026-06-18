@@ -1,0 +1,1 @@
+ALTER TABLE public.candidate_skills ADD COLUMN IF NOT EXISTS category text NOT NULL DEFAULT 'tech';
