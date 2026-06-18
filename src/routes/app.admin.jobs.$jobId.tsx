@@ -1,9 +1,11 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, X, User, Upload } from "lucide-react";
+import { ArrowLeft, Plus, X, User, Upload, Sparkles, Trash2, MessageSquareQuote } from "lucide-react";
+import { suggestInterviewQuestions } from "@/lib/interview.functions";
 
 export const Route = createFileRoute("/app/admin/jobs/$jobId")({
   component: JobDetail,
@@ -77,6 +79,8 @@ function JobDetail() {
           </button>
         </div>
       </header>
+
+      <InterviewQuestionsPanel jobId={jobId} />
 
       <div className="p-8 overflow-x-auto">
         <div className="flex gap-4 min-w-max pb-4">
@@ -195,5 +199,97 @@ function Field({ label, value, onChange, type = "text", required = false }: any)
       <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</label>
       <input type={type} required={required} value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
     </div>
+  );
+}
+
+function InterviewQuestionsPanel({ jobId }: { jobId: string }) {
+  const qc = useQueryClient();
+  const suggestFn = useServerFn(suggestInterviewQuestions);
+  const [suggesting, setSuggesting] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [draftTime, setDraftTime] = useState(120);
+
+  const { data: questions } = useQuery({
+    queryKey: ["interview-qs", jobId],
+    queryFn: async () => {
+      const { data } = await supabase.from("job_interview_questions").select("*").eq("job_id", jobId).order("position");
+      return data ?? [];
+    },
+  });
+
+  async function add(question: string, time_limit_seconds: number, position?: number) {
+    const pos = position ?? (questions?.length ?? 0) + 1;
+    await supabase.from("job_interview_questions").insert({ job_id: jobId, question, time_limit_seconds, position: pos });
+    qc.invalidateQueries({ queryKey: ["interview-qs", jobId] });
+  }
+  async function remove(id: string) {
+    await supabase.from("job_interview_questions").delete().eq("id", id);
+    qc.invalidateQueries({ queryKey: ["interview-qs", jobId] });
+  }
+  async function suggest() {
+    setSuggesting(true);
+    try {
+      const proposed = await suggestFn({ data: { jobId } });
+      if (!proposed || proposed.length === 0) { toast.error("La IA no devolvió preguntas. Probá de nuevo."); return; }
+      const start = (questions?.length ?? 0) + 1;
+      const rows = proposed.map((q: any, i: number) => ({ job_id: jobId, question: q.question, time_limit_seconds: q.time_limit_seconds, position: start + i }));
+      const { error } = await supabase.from("job_interview_questions").insert(rows);
+      if (error) throw error;
+      toast.success(`${proposed.length} preguntas sugeridas. Editá lo que quieras.`);
+      qc.invalidateQueries({ queryKey: ["interview-qs", jobId] });
+    } catch (e: any) { toast.error(e.message); } finally { setSuggesting(false); }
+  }
+
+  return (
+    <section className="px-8 py-6 border-b border-border bg-stone-50/50">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <MessageSquareQuote className="size-4 text-primary" />
+          <h2 className="font-display text-xl">Preguntas de entrevista AI</h2>
+        </div>
+        <button onClick={suggest} disabled={suggesting} className="px-4 py-2 bg-primary/10 text-primary rounded-full text-xs font-bold flex items-center gap-2 hover:bg-primary/15 disabled:opacity-50">
+          <Sparkles className="size-3.5" /> {suggesting ? "Generando…" : "Sugerir con IA"}
+        </button>
+      </div>
+      <div className="space-y-2">
+        {(questions ?? []).map((q: any, i: number) => (
+          <div key={q.id} className="flex items-center gap-3 bg-white border border-border rounded-2xl px-4 py-3">
+            <span className="text-xs font-bold text-muted-foreground w-6">{i + 1}</span>
+            <input
+              defaultValue={q.question}
+              onBlur={async (e) => {
+                if (e.target.value !== q.question) {
+                  await supabase.from("job_interview_questions").update({ question: e.target.value }).eq("id", q.id);
+                  qc.invalidateQueries({ queryKey: ["interview-qs", jobId] });
+                }
+              }}
+              className="flex-1 bg-transparent text-sm outline-none border-b border-transparent focus:border-primary/30"
+            />
+            <input
+              type="number" min={30} max={300} defaultValue={q.time_limit_seconds}
+              onBlur={async (e) => {
+                const v = parseInt(e.target.value) || 120;
+                if (v !== q.time_limit_seconds) {
+                  await supabase.from("job_interview_questions").update({ time_limit_seconds: v }).eq("id", q.id);
+                  qc.invalidateQueries({ queryKey: ["interview-qs", jobId] });
+                }
+              }}
+              className="w-16 bg-stone-50 text-xs px-2 py-1 rounded-lg outline-none border border-border"
+            />
+            <span className="text-xs text-muted-foreground">s</span>
+            <button onClick={() => remove(q.id)} className="text-muted-foreground hover:text-red-600"><Trash2 className="size-3.5" /></button>
+          </div>
+        ))}
+        {(questions ?? []).length === 0 && <p className="text-xs text-muted-foreground">Sin preguntas aún. Sugerí con IA o cargá manualmente.</p>}
+      </div>
+      <form
+        onSubmit={(e) => { e.preventDefault(); if (draft.trim()) { add(draft.trim(), draftTime); setDraft(""); } }}
+        className="mt-3 flex gap-2"
+      >
+        <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Agregar pregunta…" className="flex-1 bg-white border border-border rounded-2xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+        <input type="number" min={30} max={300} value={draftTime} onChange={(e) => setDraftTime(parseInt(e.target.value) || 120)} className="w-20 bg-white border border-border rounded-2xl px-3 py-2 text-xs outline-none" />
+        <button type="submit" className="px-4 bg-primary text-primary-foreground rounded-full text-xs font-bold">+ Agregar</button>
+      </form>
+    </section>
   );
 }

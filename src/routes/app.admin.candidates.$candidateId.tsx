@@ -1,9 +1,11 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Plus, Trash2, User } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Trash2, User, Send, Copy, Sparkles, CheckCircle2 } from "lucide-react";
+import { inviteCandidate, processInterview } from "@/lib/interview.functions";
 
 export const Route = createFileRoute("/app/admin/candidates/$candidateId")({
   component: CandidateEditor,
@@ -44,6 +46,7 @@ function CandidateEditor() {
         </div>
         <SkillsSection candidate={candidate} onUpdate={refetch} />
         <div className="space-y-6">
+          <InterviewAdminSection candidate={candidate} onUpdate={refetch} />
           <ExperienceSection candidate={candidate} onUpdate={refetch} />
           <VideoSection candidate={candidate} onUpdate={refetch} />
         </div>
@@ -305,6 +308,102 @@ function Input({ label, value, onChange, type = "text" }: { label: string; value
     <div>
       <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 w-full bg-white border border-border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+    </div>
+  );
+}
+
+function InterviewAdminSection({ candidate, onUpdate }: any) {
+  const inviteFn = useServerFn(inviteCandidate);
+  const processFn = useServerFn(processInterview);
+  const [inviting, setInviting] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [magicLink, setMagicLink] = useState<string | null>(null);
+
+  const { data: answers } = useQuery({
+    queryKey: ["interview-answers", candidate.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("candidate_interview_answers")
+        .select("*,job_interview_questions(question,position)")
+        .eq("candidate_id", candidate.id);
+      return data ?? [];
+    },
+  });
+
+  async function invite() {
+    setInviting(true);
+    try {
+      const res = await inviteFn({ data: { candidateId: candidate.id } });
+      setMagicLink(res.magic_link);
+      toast.success(`Invitación lista. Copiá el link y envialo a ${res.email}`);
+      onUpdate();
+    } catch (e: any) { toast.error(e.message); } finally { setInviting(false); }
+  }
+
+  async function processIv() {
+    setProcessing(true);
+    try {
+      await processFn({ data: { candidateId: candidate.id } });
+      toast.success("Perfil procesado por IA");
+      onUpdate();
+    } catch (e: any) { toast.error(e.message); } finally { setProcessing(false); }
+  }
+
+  const profile = candidate.ai_profile;
+  const sorted = (answers ?? []).slice().sort((a: any, b: any) => (a.job_interview_questions?.position ?? 0) - (b.job_interview_questions?.position ?? 0));
+
+  return (
+    <div className="bg-white rounded-3xl border border-border p-6">
+      <h3 className="font-display text-xl mb-4">Entrevista AI</h3>
+
+      <button onClick={invite} disabled={inviting || !candidate.email} className="w-full py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2">
+        <Send className="size-4" /> {inviting ? "..." : candidate.interview_invited_at ? "Reenviar invitación" : "Invitar a entrevista"}
+      </button>
+      {!candidate.email && <p className="text-[11px] text-muted-foreground mt-1.5">Cargá un email primero.</p>}
+      {candidate.interview_invited_at && <p className="text-[11px] text-muted-foreground mt-1.5">Invitado el {new Date(candidate.interview_invited_at).toLocaleDateString("es-AR")}</p>}
+
+      {magicLink && (
+        <div className="mt-3 p-3 bg-stone-50 border border-border rounded-2xl">
+          <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-2">Link mágico (vence en 1h) — copialo y mandalo</p>
+          <div className="flex gap-2">
+            <input readOnly value={magicLink} className="flex-1 text-[10px] bg-white border border-border rounded-lg px-2 py-1.5 font-mono" />
+            <button onClick={() => { navigator.clipboard.writeText(magicLink); toast.success("Copiado"); }} className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg"><Copy className="size-3" /></button>
+          </div>
+        </div>
+      )}
+
+      {sorted.length > 0 && (
+        <div className="mt-5 space-y-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Respuestas ({sorted.length})</p>
+          {sorted.map((a: any) => (
+            <details key={a.id} className="border border-border rounded-xl">
+              <summary className="px-3 py-2 text-xs cursor-pointer">{a.job_interview_questions?.position}. {a.job_interview_questions?.question}</summary>
+              {a.video_url && <video src={a.video_url} controls className="w-full aspect-video bg-black rounded-b-xl" />}
+            </details>
+          ))}
+          <button onClick={processIv} disabled={processing} className="mt-3 w-full py-2.5 bg-primary/10 text-primary rounded-full text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2">
+            <Sparkles className="size-3.5" /> {processing ? "..." : profile ? "Reprocesar con IA" : "Procesar con IA"}
+          </button>
+        </div>
+      )}
+
+      {profile && (
+        <div className="mt-5 p-4 bg-primary/5 border border-primary/10 rounded-2xl space-y-2 text-xs">
+          {candidate.profile_validated_at && (
+            <div className="inline-flex items-center gap-1.5 text-emerald-700 font-bold"><CheckCircle2 className="size-3" /> Validado por el candidato</div>
+          )}
+          {profile.summary && <p className="text-foreground/80">{profile.summary}</p>}
+          {profile.role_fit_score !== undefined && (
+            <p><span className="font-bold">Fit score:</span> {profile.role_fit_score}/100 — {profile.suggested_seniority}</p>
+          )}
+          {Array.isArray(profile.strengths) && profile.strengths.length > 0 && (
+            <p><span className="font-bold">Fortalezas:</span> {profile.strengths.join(", ")}</p>
+          )}
+          {Array.isArray(profile.concerns) && profile.concerns.length > 0 && (
+            <p><span className="font-bold">A profundizar:</span> {profile.concerns.join(", ")}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

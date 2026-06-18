@@ -13,7 +13,8 @@ export const Route = createFileRoute("/app")({
       .from("user_roles")
       .select("role")
       .eq("user_id", data.user.id);
-    const role = roles?.some((r) => r.role === "admin") ? "admin" : (roles?.[0]?.role ?? null);
+    const rolesList = (roles ?? []).map((r) => r.role);
+    const role = rolesList.includes("admin") ? "admin" : rolesList.includes("candidate") ? "candidate" : (rolesList[0] ?? null);
     return { user: data.user, role };
   },
   component: AppLayout,
@@ -53,7 +54,10 @@ function AppLayout() {
   const clientNav = [
     { to: "/app/portal", label: "Mis Puestos", icon: Briefcase },
   ];
-  const nav = isAdmin ? adminNav : clientNav;
+  const candidateNav = [
+    { to: "/app/candidate", label: "Mi entrevista", icon: Briefcase },
+  ];
+  const nav = isAdmin ? adminNav : role === "candidate" ? candidateNav : clientNav;
 
   const initials = ((profile?.first_name?.[0] ?? user.email?.[0] ?? "?") + (profile?.last_name?.[0] ?? "")).toUpperCase();
 

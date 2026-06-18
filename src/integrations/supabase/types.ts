@@ -87,6 +87,57 @@ export type Database = {
           },
         ]
       }
+      candidate_interview_answers: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          question_id: string
+          storage_path: string | null
+          transcript: string | null
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          question_id: string
+          storage_path?: string | null
+          transcript?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          question_id?: string
+          storage_path?: string | null
+          transcript?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_interview_answers_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_interview_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "job_interview_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidate_skills: {
         Row: {
           candidate_id: string
@@ -176,6 +227,8 @@ export type Database = {
       }
       candidates: {
         Row: {
+          ai_profile: Json | null
+          auth_user_id: string | null
           created_at: string
           current_stage_id: string | null
           cv_url: string | null
@@ -183,16 +236,20 @@ export type Database = {
           full_name: string
           headline: string | null
           id: string
+          interview_invited_at: string | null
           job_id: string
           linkedin_url: string | null
           phone: string | null
           photo_url: string | null
+          profile_validated_at: string | null
           summary: string | null
           updated_at: string
           visibility: Database["public"]["Enums"]["candidate_visibility"]
           years_experience: number | null
         }
         Insert: {
+          ai_profile?: Json | null
+          auth_user_id?: string | null
           created_at?: string
           current_stage_id?: string | null
           cv_url?: string | null
@@ -200,16 +257,20 @@ export type Database = {
           full_name: string
           headline?: string | null
           id?: string
+          interview_invited_at?: string | null
           job_id: string
           linkedin_url?: string | null
           phone?: string | null
           photo_url?: string | null
+          profile_validated_at?: string | null
           summary?: string | null
           updated_at?: string
           visibility?: Database["public"]["Enums"]["candidate_visibility"]
           years_experience?: number | null
         }
         Update: {
+          ai_profile?: Json | null
+          auth_user_id?: string | null
           created_at?: string
           current_stage_id?: string | null
           cv_url?: string | null
@@ -217,10 +278,12 @@ export type Database = {
           full_name?: string
           headline?: string | null
           id?: string
+          interview_invited_at?: string | null
           job_id?: string
           linkedin_url?: string | null
           phone?: string | null
           photo_url?: string | null
+          profile_validated_at?: string | null
           summary?: string | null
           updated_at?: string
           visibility?: Database["public"]["Enums"]["candidate_visibility"]
@@ -490,6 +553,44 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: false
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_interview_questions: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          position: number
+          question: string
+          time_limit_seconds: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          position?: number
+          question: string
+          time_limit_seconds?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          position?: number
+          question?: string
+          time_limit_seconds?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_interview_questions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -774,7 +875,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "client"
+      app_role: "admin" | "client" | "candidate"
       automation_trigger:
         | "cv_uploaded"
         | "stage_changed"
@@ -909,7 +1010,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "client"],
+      app_role: ["admin", "client", "candidate"],
       automation_trigger: [
         "cv_uploaded",
         "stage_changed",
