@@ -61,8 +61,19 @@ function ClientDetail() {
             <p className="text-sm text-muted-foreground">Cliente</p>
             <h1 className="font-display text-3xl md:text-4xl mt-1">{client?.name ?? "..."}</h1>
             {client?.industry && <p className="text-sm text-muted-foreground mt-1">{client.industry}</p>}
+            {client?.website && (
+              <a href={client.website.startsWith("http") ? client.website : `https://${client.website}`} target="_blank" rel="noreferrer" className="text-sm text-primary mt-1 inline-flex items-center gap-1.5 hover:underline">
+                <Globe className="size-3.5" /> {client.website}
+              </a>
+            )}
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setShowEdit(true)} className="flex items-center gap-2 px-3 py-2.5 bg-white border border-border rounded-full text-sm font-bold hover:border-primary/30">
+              <Pencil className="size-4" /> Editar
+            </button>
+            <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 px-3 py-2.5 bg-white border border-border rounded-full text-sm font-bold text-destructive hover:bg-destructive/5 hover:border-destructive/30">
+              <Trash2 className="size-4" /> Borrar
+            </button>
             <button onClick={() => setShowNewContact(true)} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-full text-sm font-bold hover:border-primary/30">
               <UserPlus className="size-4" /> Agregar contacto
             </button>
