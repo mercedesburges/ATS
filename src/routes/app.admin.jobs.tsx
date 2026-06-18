@@ -191,6 +191,20 @@ function MetricsDialog({ job, onClose, onSaved }: { job: JobRow; onClose: () => 
   const [hWarn, setHWarn] = useState(m.hiring_team_warn_days);
   const [hAlert, setHAlert] = useState(m.hiring_team_alert_days);
   const [loading, setLoading] = useState(false);
+  const [usingDefaults, setUsingDefaults] = useState(false);
+
+  async function loadDefaults() {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) return;
+    const { data } = await supabase.from("metric_defaults" as any).select("*").eq("user_id", user.user.id).maybeSingle();
+    const d: any = data ?? DEFAULTS;
+    setRWarn(d.recruiter_warn_days);
+    setRAlert(d.recruiter_alert_days);
+    setHWarn(d.hiring_team_warn_days);
+    setHAlert(d.hiring_team_alert_days);
+    setUsingDefaults(true);
+    toast.success(data ? "Defaults cargados." : "Aún no configuraste defaults — usando valores estándar.");
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
