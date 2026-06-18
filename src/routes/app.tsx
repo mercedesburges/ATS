@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, Briefcase, Users, LogOut, Building2, Zap, Contact, Gauge } from "lucide-react";
+import { LayoutDashboard, Briefcase, Users, LogOut, Building2, Zap, Contact, Gauge, ListOrdered } from "lucide-react";
 
 export const Route = createFileRoute("/app")({
   ssr: false,
@@ -47,6 +47,7 @@ function AppLayout() {
     { to: "/app/admin/candidates", label: "Candidatos", icon: Users },
     { to: "/app/admin/automations", label: "Automatizaciones", icon: Zap },
     { to: "/app/admin/contacts", label: "Contactos", icon: Contact },
+    { to: "/app/admin/stages", label: "Stages", icon: ListOrdered },
     { to: "/app/admin/metrics", label: "Métricas", icon: Gauge },
   ];
   const clientNav = [

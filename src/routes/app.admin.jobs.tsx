@@ -16,7 +16,7 @@ type JobRow = {
   is_active: boolean;
   created_at: string;
   clients: { name: string } | null;
-  job_stages: { id: string; name: string; position: number; is_terminal: boolean; is_rejected: boolean }[];
+  job_stages: { id: string; name: string; position: number; is_terminal: boolean; is_rejected: boolean; category?: string }[];
   candidates: { id: string; current_stage_id: string | null; created_at: string; updated_at: string }[];
   job_metrics: { recruiter_warn_days: number; recruiter_alert_days: number; hiring_team_warn_days: number; hiring_team_alert_days: number } | null;
 };
@@ -54,7 +54,7 @@ function JobsList() {
     queryFn: async (): Promise<JobRow[]> => {
       const { data, error } = await supabase
         .from("jobs")
-        .select("id,title,area,is_active,created_at,clients(name),job_stages(id,name,position,is_terminal,is_rejected),candidates(id,current_stage_id,created_at,updated_at),job_metrics(recruiter_warn_days,recruiter_alert_days,hiring_team_warn_days,hiring_team_alert_days)")
+        .select("id,title,area,is_active,created_at,clients(name),job_stages(id,name,position,is_terminal,is_rejected,category),candidates(id,current_stage_id,created_at,updated_at),job_metrics(recruiter_warn_days,recruiter_alert_days,hiring_team_warn_days,hiring_team_alert_days)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as any;
