@@ -16,7 +16,7 @@ type JobRow = {
   is_active: boolean;
   created_at: string;
   clients: { name: string } | null;
-  job_stages: { id: string; name: string; position: number; is_terminal: boolean; is_rejected: boolean }[];
+  job_stages: { id: string; name: string; position: number; is_terminal: boolean; is_rejected: boolean; category?: string }[];
   candidates: { id: string; current_stage_id: string | null; created_at: string; updated_at: string }[];
   job_metrics: { recruiter_warn_days: number; recruiter_alert_days: number; hiring_team_warn_days: number; hiring_team_alert_days: number } | null;
 };
@@ -54,7 +54,7 @@ function JobsList() {
     queryFn: async (): Promise<JobRow[]> => {
       const { data, error } = await supabase
         .from("jobs")
-        .select("id,title,area,is_active,created_at,clients(name),job_stages(id,name,position,is_terminal,is_rejected),candidates(id,current_stage_id,created_at,updated_at),job_metrics(recruiter_warn_days,recruiter_alert_days,hiring_team_warn_days,hiring_team_alert_days)")
+        .select("id,title,area,is_active,created_at,clients(name),job_stages(id,name,position,is_terminal,is_rejected,category),candidates(id,current_stage_id,created_at,updated_at),job_metrics(recruiter_warn_days,recruiter_alert_days,hiring_team_warn_days,hiring_team_alert_days)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as any;
@@ -120,10 +120,24 @@ function JobCard({ job, onConfigure }: { job: JobRow; onConfigure: () => void })
 
   const { stageCounts, recruiterDays, hiringDays } = useMemo(() => {
     const sorted = [...job.job_stages].sort((a, b) => a.position - b.position);
-    const counts = sorted.map((s) => ({
-      stage: s,
-      count: job.candidates.filter((c) => c.current_stage_id === s.id).length,
-    }));
+    function categoryOf(s: { name: string; is_rejected: boolean; category?: string }) {
+      if (s.category && s.category !== "other") return s.category;
+      if (s.is_rejected) return "rejected";
+      const n = s.name.toLowerCase();
+      if (n.includes("review") || n.includes("pending")) return "review";
+      if (n.includes("interview")) return "interview";
+      if (n.includes("technical") || n.includes("evaluation") || n.includes("offer") || n.includes("advanced")) return "advanced";
+      return "other";
+    }
+    const buckets: { key: string; label: string }[] = [
+      { key: "review", label: "Review" },
+      { key: "interview", label: "Interview" },
+      { key: "advanced", label: "Advanced" },
+    ];
+    const counts = buckets.map((b) => {
+      const stageIds = new Set(sorted.filter((s) => categoryOf(s) === b.key).map((s) => s.id));
+      return { stage: { id: b.key, name: b.label }, count: job.candidates.filter((c) => c.current_stage_id && stageIds.has(c.current_stage_id)).length };
+    });
     // recruiter: days since last candidate added
     const lastCand = job.candidates.reduce((acc, c) => (!acc || new Date(c.created_at) > new Date(acc) ? c.created_at : acc), "" as string);
     const rDays = lastCand ? daysSince(lastCand) : daysSince(job.created_at);

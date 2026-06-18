@@ -287,6 +287,56 @@ export type Database = {
           },
         ]
       }
+      client_stage_defaults: {
+        Row: {
+          category: string
+          client_id: string
+          color: string | null
+          created_at: string
+          id: string
+          is_rejected: boolean
+          is_terminal: boolean
+          name: string
+          position: number
+          triggers_availability_email: boolean
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          client_id: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_rejected?: boolean
+          is_terminal?: boolean
+          name: string
+          position: number
+          triggers_availability_email?: boolean
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          client_id?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_rejected?: boolean
+          is_terminal?: boolean
+          name?: string
+          position?: number
+          triggers_availability_email?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_stage_defaults_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           created_at: string
@@ -440,6 +490,7 @@ export type Database = {
       }
       job_stages: {
         Row: {
+          category: string
           color: string | null
           created_at: string
           id: string
@@ -452,6 +503,7 @@ export type Database = {
           triggers_availability_email: boolean
         }
         Insert: {
+          category?: string
           color?: string | null
           created_at?: string
           id?: string
@@ -464,6 +516,7 @@ export type Database = {
           triggers_availability_email?: boolean
         }
         Update: {
+          category?: string
           color?: string | null
           created_at?: string
           id?: string
@@ -592,6 +645,48 @@ export type Database = {
           id?: string
           last_name?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      stage_defaults: {
+        Row: {
+          category: string
+          color: string | null
+          created_at: string
+          id: string
+          is_rejected: boolean
+          is_terminal: boolean
+          name: string
+          position: number
+          triggers_availability_email: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_rejected?: boolean
+          is_terminal?: boolean
+          name: string
+          position: number
+          triggers_availability_email?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_rejected?: boolean
+          is_terminal?: boolean
+          name?: string
+          position?: number
+          triggers_availability_email?: boolean
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
