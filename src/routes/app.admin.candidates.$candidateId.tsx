@@ -146,9 +146,11 @@ function CandidateEditor() {
 function ContactStrip({ candidate, onEdit }: any) {
   const age = calcAge(candidate.birth_date);
   const wa = waLink(candidate.phone);
+  const loc = [candidate.city, candidate.country].filter(Boolean).join(", ") || candidate.location;
   const items: React.ReactNode[] = [];
   if (age !== null) items.push(<span key="age" className="inline-flex items-center gap-1"><Cake className="size-3" />{age} años</span>);
-  if (candidate.location) items.push(<span key="loc" className="inline-flex items-center gap-1"><MapPin className="size-3" />{candidate.location}</span>);
+  if (loc) items.push(<span key="loc" className="inline-flex items-center gap-1"><MapPin className="size-3" />{loc}</span>);
+  if (candidate.expertise) items.push(<span key="exp" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold uppercase tracking-wider text-[10px]">{candidate.expertise}</span>);
   if (candidate.email) items.push(<a key="em" href={`mailto:${candidate.email}`} className="inline-flex items-center gap-1 hover:text-primary"><Mail className="size-3" />{candidate.email}</a>);
   if (candidate.phone) items.push(
     wa
@@ -164,22 +166,50 @@ function ContactStrip({ candidate, onEdit }: any) {
   );
 }
 
+const EXPERTISE_OPTIONS = [
+  "Engineering", "Product", "Design", "Data", "Marketing",
+  "Sales", "Customer Success", "Operations", "Finance", "People / HR", "Legal", "Other",
+];
+
 function ContactEditModal({ candidate, onClose, onSaved }: any) {
   const [form, setForm] = useState({
     full_name: candidate.full_name ?? "",
     email: candidate.email ?? "",
     phone: candidate.phone ?? "",
-    location: candidate.location ?? "",
+    city: candidate.city ?? candidate.location ?? "",
+    country: candidate.country ?? "",
+    expertise: candidate.expertise ?? "",
     birth_date: candidate.birth_date ?? "",
   });
   const [saving, setSaving] = useState(false);
+  const [lookingUp, setLookingUp] = useState(false);
+
+  // Auto-fill country from city
+  useEffect(() => {
+    const city = form.city.trim();
+    if (!city || form.country) return;
+    const t = setTimeout(async () => {
+      try {
+        setLookingUp(true);
+        const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=es`);
+        const j = await r.json();
+        const c = j?.results?.[0]?.country;
+        if (c) setForm((f) => f.country ? f : { ...f, country: c });
+      } catch {} finally { setLookingUp(false); }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [form.city]);
+
   async function save() {
     setSaving(true);
     const { error } = await supabase.from("candidates").update({
       full_name: form.full_name,
       email: form.email || null,
       phone: form.phone || null,
-      location: form.location || null,
+      city: form.city || null,
+      country: form.country || null,
+      location: [form.city, form.country].filter(Boolean).join(", ") || null,
+      expertise: form.expertise || null,
       birth_date: form.birth_date || null,
     }).eq("id", candidate.id);
     setSaving(false);
@@ -189,7 +219,7 @@ function ContactEditModal({ candidate, onClose, onSaved }: any) {
   }
   return (
     <div className="fixed inset-0 z-50 bg-black/40 grid place-items-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-3xl border border-border p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-3xl border border-border p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-display text-xl">Editar datos personales</h3>
           <button onClick={onClose} className="size-8 rounded-full grid place-items-center hover:bg-stone-100"><X className="size-4" /></button>
@@ -198,7 +228,15 @@ function ContactEditModal({ candidate, onClose, onSaved }: any) {
           <Input label="Nombre completo" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
           <Input label="Email" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
           <Input label="Celular (con código país, ej +5491134567890)" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
-          <Input label="Ciudad / Ubicación" value={form.location} onChange={(v) => setForm({ ...form, location: v })} />
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Área de expertise</label>
+            <select value={form.expertise} onChange={(e) => setForm({ ...form, expertise: e.target.value })} className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              <option value="">— Sin asignar —</option>
+              {EXPERTISE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+          <Input label="Ciudad" value={form.city} onChange={(v) => setForm({ ...form, city: v, country: v ? form.country : "" })} />
+          <Input label={lookingUp ? "País (buscando…)" : "País (auto)"} value={form.country} onChange={(v) => setForm({ ...form, country: v })} />
           <Input label="Fecha de nacimiento" type="date" value={form.birth_date} onChange={(v) => setForm({ ...form, birth_date: v })} />
           <button onClick={save} disabled={saving} className="w-full py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-bold disabled:opacity-50">{saving ? "Guardando..." : "Guardar"}</button>
         </div>
@@ -206,6 +244,7 @@ function ContactEditModal({ candidate, onClose, onSaved }: any) {
     </div>
   );
 }
+
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
