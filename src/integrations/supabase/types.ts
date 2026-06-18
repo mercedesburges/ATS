@@ -238,6 +238,9 @@ export type Database = {
           id: string
           interview_invited_at: string | null
           job_id: string
+          linkedin_invite_token: string | null
+          linkedin_linked_at: string | null
+          linkedin_sub: string | null
           linkedin_url: string | null
           phone: string | null
           photo_url: string | null
@@ -259,6 +262,9 @@ export type Database = {
           id?: string
           interview_invited_at?: string | null
           job_id: string
+          linkedin_invite_token?: string | null
+          linkedin_linked_at?: string | null
+          linkedin_sub?: string | null
           linkedin_url?: string | null
           phone?: string | null
           photo_url?: string | null
@@ -280,6 +286,9 @@ export type Database = {
           id?: string
           interview_invited_at?: string | null
           job_id?: string
+          linkedin_invite_token?: string | null
+          linkedin_linked_at?: string | null
+          linkedin_sub?: string | null
           linkedin_url?: string | null
           phone?: string | null
           photo_url?: string | null
