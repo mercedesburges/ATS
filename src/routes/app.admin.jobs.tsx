@@ -238,6 +238,14 @@ function MetricsDialog({ job, onClose, onSaved }: { job: JobRow; onClose: () => 
           <button onClick={onClose} className="size-8 rounded-full hover:bg-muted grid place-items-center"><X className="size-4" /></button>
         </div>
         <form onSubmit={submit} className="p-6 space-y-6">
+          <div className="flex items-center justify-between gap-3 bg-stone-50 border border-border rounded-2xl p-3">
+            <p className="text-xs text-muted-foreground">
+              {usingDefaults ? "Usando tus defaults. Podés ajustarlos abajo." : "¿No querés configurar puesto por puesto?"}
+            </p>
+            <button type="button" onClick={loadDefaults} className="text-xs font-bold px-3 py-1.5 bg-white border border-border rounded-full hover:border-primary/30 shrink-0">
+              Usar defaults
+            </button>
+          </div>
           <div>
             <p className="font-display text-lg mb-1">Reclutadora</p>
             <p className="text-xs text-muted-foreground mb-3">Días sin sumar un candidato nuevo al puesto.</p>
