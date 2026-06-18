@@ -118,19 +118,19 @@ function CandidateEditor() {
       {editingContact && <ContactEditModal candidate={candidate} onClose={() => setEditingContact(false)} onSaved={() => { setEditingContact(false); refetch(); }} />}
 
       <div className="p-8">
-        <Tabs defaultValue="cv" className="w-full">
+        <Tabs defaultValue="perfil" className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="cv" className="gap-2"><FileText className="size-4" /> CV</TabsTrigger>
             <TabsTrigger value="perfil" className="gap-2"><Briefcase className="size-4" /> Perfil & Skills</TabsTrigger>
-            <TabsTrigger value="entrevista" className="gap-2"><Video className="size-4" /> Entrevista AI</TabsTrigger>
+            <TabsTrigger value="cv" className="gap-2"><FileText className="size-4" /> CV</TabsTrigger>
+            <TabsTrigger value="entrevista" className="gap-2"><Video className="size-4" /> Live Cover Letter</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="cv">
-            <CvSection candidate={candidate} onUpdate={refetch} />
-          </TabsContent>
 
           <TabsContent value="perfil">
             <ProfileSkillsTab candidate={candidate} onUpdate={refetch} />
+          </TabsContent>
+
+          <TabsContent value="cv">
+            <CvSection candidate={candidate} onUpdate={refetch} />
           </TabsContent>
 
           <TabsContent value="entrevista" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -592,14 +592,23 @@ function VisibilityToggle({ candidateId, visibility, onChange }: any) {
   );
 }
 
+function renderBold(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((p, i) =>
+    p.startsWith("**") && p.endsWith("**")
+      ? <strong key={i} className="font-bold text-foreground">{p.slice(2, -2)}</strong>
+      : <span key={i}>{p}</span>
+  );
+}
+
 function ProfileSkillsTab({ candidate, onUpdate }: any) {
   const analyzeFn = useServerFn(analyzeCvProfile);
   const [analyzing, setAnalyzing] = useState(false);
   const ai = (candidate.ai_profile as any) || {};
   const techSkills = (candidate.candidate_skills ?? []).filter((s: any) => (s.category ?? "tech") === "tech");
   const softSkills = (candidate.candidate_skills ?? []).filter((s: any) => s.category === "soft");
-  const experiences = candidate.candidate_experiences ?? [];
   const summary = ai.summary || candidate.summary;
+  const highlights: string[] = Array.isArray(ai.highlights) ? ai.highlights : [];
 
   async function analyze() {
     if (!candidate.cv_url) { toast.error("Subí primero un CV en la solapa CV."); return; }
@@ -625,22 +634,28 @@ function ProfileSkillsTab({ candidate, onUpdate }: any) {
           <h3 className="font-display text-xl">Experiencia profesional</h3>
         </div>
         {summary ? (
-          <p className="text-sm leading-relaxed text-foreground/80 whitespace-pre-line">{summary}</p>
+          <p className="text-sm leading-relaxed text-foreground/80 whitespace-pre-line">{renderBold(summary)}</p>
         ) : (
           <p className="text-sm text-muted-foreground italic">Sin resumen aún. Subí el CV y tocá "Analizar CV con IA".</p>
         )}
-        {experiences.length > 0 && (
-          <div className="mt-5 space-y-3 border-t border-border pt-4">
-            {experiences.map((e: any) => (
-              <div key={e.id} className="border-l-2 border-primary/30 pl-3">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{e.period || "—"}</p>
-                <p className="font-bold text-sm">{e.role}{e.company && ` · ${e.company}`}</p>
-                {e.description && <p className="text-xs text-muted-foreground mt-1">{e.description}</p>}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
+
+      {highlights.length > 0 && (
+        <div className="bg-white rounded-3xl border border-border p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircle2 className="size-4 text-emerald-600" />
+            <h3 className="font-display text-xl">Highlights alineados al puesto</h3>
+          </div>
+          <ul className="space-y-3">
+            {highlights.map((h, i) => (
+              <li key={i} className="flex gap-3 text-sm leading-relaxed text-foreground/80">
+                <span className="mt-1.5 size-1.5 rounded-full bg-primary shrink-0" />
+                <span>{renderBold(h)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-3xl border border-border p-6">

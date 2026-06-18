@@ -76,14 +76,15 @@ export const analyzeCvProfile = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY no configurada");
 
-    const system = `Sos una recruiter senior. Analizás un CV y devolvés SOLO JSON válido con esta forma exacta:
+    const system = `Sos una recruiter senior. Analizás un CV en relación al puesto objetivo y devolvés SOLO JSON válido con esta forma exacta:
 {
-  "summary": "string (3-5 oraciones describiendo la experiencia profesional)",
+  "summary": "string — 4 a 6 oraciones en prosa narrativa describiendo la trayectoria profesional de la persona (NO empresa por empresa, sino una historia coherente). Usá **negritas markdown** para resaltar lo más importante: años de experiencia, seniority, tecnologías clave, logros cuantificables.",
+  "highlights": ["string — 4 a 7 bullets cortos que destaquen aspectos del perfil alineados al puesto objetivo. Si algo viene de una empresa específica y es relevante, mencionala como contexto del highlight (ej: 'Lideró migración a microservicios en **MercadoLibre**, escalando a 10M req/día'). Usá **negritas markdown** en lo crítico de cada bullet."],
   "tech_skills": ["..."],
   "soft_skills": ["..."],
   "experiences": [{"role":"","company":"","period":"","description":""}]
 }
-En español rioplatense. No inventes. Si no hay datos, devolvé arrays vacíos.`;
+En español rioplatense. No inventes datos. Si no hay puesto objetivo, hacé highlights generales del perfil. Si no hay datos, devolvé arrays vacíos.`;
 
     const userMsg = `Puesto objetivo: ${(cand as any).jobs?.title ?? "-"} en ${(cand as any).jobs?.clients?.name ?? "-"}.\nAnalizá el CV adjunto de ${cand.full_name}.`;
 
@@ -114,6 +115,7 @@ En español rioplatense. No inventes. Si no hay datos, devolvé arrays vacíos.`
     try { parsed = JSON.parse(raw); } catch { parsed = {}; }
 
     const summary = String(parsed.summary ?? "").trim();
+    const highlights: string[] = Array.isArray(parsed.highlights) ? parsed.highlights.map(String).filter(Boolean) : [];
     const tech: string[] = Array.isArray(parsed.tech_skills) ? parsed.tech_skills.map(String) : [];
     const soft: string[] = Array.isArray(parsed.soft_skills) ? parsed.soft_skills.map(String) : [];
     const experiences: any[] = Array.isArray(parsed.experiences) ? parsed.experiences : [];
@@ -125,7 +127,7 @@ En español rioplatense. No inventes. Si no hay datos, devolvé arrays vacíos.`
     const prevProfile = (existing?.ai_profile as any) || {};
     await supabaseAdmin.from("candidates").update({
       summary,
-      ai_profile: { ...prevProfile, summary, tech_skills: tech, soft_skills: soft },
+      ai_profile: { ...prevProfile, summary, highlights, tech_skills: tech, soft_skills: soft },
     }).eq("id", cand.id);
 
     // Replace skills + experiences
