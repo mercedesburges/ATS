@@ -972,6 +972,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      candidate_owns_job: {
+        Args: { _job_id: string; _user_id: string }
+        Returns: boolean
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
