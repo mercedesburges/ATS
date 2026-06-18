@@ -4,9 +4,23 @@ import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Plus, Trash2, User, Send, Copy, Sparkles, CheckCircle2, FileText, Briefcase, Video } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Trash2, User, Send, Copy, Sparkles, CheckCircle2, FileText, Briefcase, Video, Mail, Phone, MapPin, Cake, Pencil, X } from "lucide-react";
 import { inviteCandidate, processInterview } from "@/lib/interview.functions";
+import { analyzeCvProfile } from "@/lib/cv.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+function calcAge(birth?: string | null): number | null {
+  if (!birth) return null;
+  const d = new Date(birth);
+  if (isNaN(d.getTime())) return null;
+  const diff = Date.now() - d.getTime();
+  return Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+}
+function waLink(phone?: string | null): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/[^\d]/g, "");
+  return digits ? `https://wa.me/${digits}` : null;
+}
 
 export const Route = createFileRoute("/app/admin/candidates/$candidateId")({
   component: CandidateEditor,
