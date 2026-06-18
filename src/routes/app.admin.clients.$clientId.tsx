@@ -153,6 +153,10 @@ function ClientDetail() {
         )}
       </section>
 
+      <section className="px-8 pt-8">
+        <InterviewModeSection clientId={clientId} currentMode={client?.interview_mode ?? "live_cover_letter"} onModeChange={() => qc.invalidateQueries({ queryKey: ["client", clientId] })} />
+      </section>
+
       <section className="px-8 py-8">
         <h2 className="font-display text-2xl mb-4">Puestos</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
