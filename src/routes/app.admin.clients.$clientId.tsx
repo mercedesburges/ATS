@@ -551,3 +551,148 @@ function Field({ label, value, onChange, type = "text", required = false }: { la
     </div>
   );
 }
+
+function InterviewModeSection({ clientId, currentMode, onModeChange }: { clientId: string; currentMode: string; onModeChange: () => void }) {
+  const qc = useQueryClient();
+  const [mode, setMode] = useState<"live_cover_letter" | "video_interview">(currentMode as any);
+  const [open, setOpen] = useState(false);
+  const [savingMode, setSavingMode] = useState(false);
+
+  useEffect(() => { setMode(currentMode as any); }, [currentMode]);
+
+  const { data: questions, refetch } = useQuery({
+    queryKey: ["client-interview-questions", clientId, mode],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("client_interview_questions")
+        .select("*")
+        .eq("client_id", clientId)
+        .eq("mode", mode)
+        .order("position");
+      return data ?? [];
+    },
+  });
+
+  async function changeMode(next: "live_cover_letter" | "video_interview") {
+    if (next === mode) return;
+    setSavingMode(true);
+    const { error } = await supabase.from("clients").update({ interview_mode: next }).eq("id", clientId);
+    setSavingMode(false);
+    if (error) { toast.error(error.message); return; }
+    setMode(next);
+    onModeChange();
+    toast.success("Modalidad actualizada");
+  }
+
+  async function addQuestion() {
+    const nextPos = (questions?.length ?? 0) + 1;
+    const { error } = await supabase.from("client_interview_questions").insert({
+      client_id: clientId, mode, position: nextPos,
+      question: "Nueva pregunta", time_limit_seconds: 120,
+    });
+    if (error) toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["client-interview-questions", clientId, mode] });
+  }
+
+  async function updateQuestion(id: string, patch: any) {
+    const { error } = await supabase.from("client_interview_questions").update(patch).eq("id", id);
+    if (error) toast.error(error.message);
+    refetch();
+  }
+  async function removeQuestion(id: string) {
+    const { error } = await supabase.from("client_interview_questions").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    refetch();
+  }
+
+  const modeLabel = mode === "live_cover_letter" ? "Live Cover Letter" : "Video Interview";
+  const ModeIcon = mode === "live_cover_letter" ? FileText : Video;
+
+  return (
+    <div className="bg-white border border-border rounded-2xl">
+      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-stone-50 rounded-2xl">
+        <div className="flex items-center gap-3">
+          <div className="size-9 rounded-xl bg-primary/5 text-primary grid place-items-center"><ModeIcon className="size-4" /></div>
+          <div className="text-left">
+            <p className="font-display text-lg leading-tight">Modalidad de entrevista del candidato</p>
+            <p className="text-xs text-muted-foreground">{modeLabel} · {questions?.length ?? 0} preguntas preseteadas</p>
+          </div>
+        </div>
+        <ChevronDown className={`size-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="px-5 pb-5 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {([
+              { v: "live_cover_letter", label: "Live Cover Letter", desc: "El candidato escribe respuestas en vivo a las preguntas.", icon: FileText },
+              { v: "video_interview", label: "Video Interview", desc: "El candidato graba un video por cada pregunta.", icon: Video },
+            ] as const).map((opt) => {
+              const selected = mode === opt.v;
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.v}
+                  disabled={savingMode}
+                  onClick={() => changeMode(opt.v)}
+                  className={`text-left p-4 rounded-2xl border-2 transition-all disabled:opacity-50 ${selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon className={`size-4 ${selected ? "text-primary" : "text-muted-foreground"}`} />
+                    <p className="font-bold text-sm">{opt.label}</p>
+                    {selected && <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-primary">Activo</span>}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">{opt.desc}</p>
+                </button>
+              );
+            })}
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Preguntas preseteadas — {modeLabel}</p>
+              <button onClick={addQuestion} className="text-xs font-bold inline-flex items-center gap-1.5 text-primary hover:underline">
+                <Plus className="size-3" /> Agregar pregunta
+              </button>
+            </div>
+            {(questions?.length ?? 0) === 0 ? (
+              <div className="border border-dashed border-border rounded-2xl p-6 text-center text-sm text-muted-foreground">
+                Todavía no hay preguntas para esta modalidad.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {questions!.map((q: any, idx: number) => (
+                  <div key={q.id} className="border border-border rounded-2xl p-3 flex items-start gap-3">
+                    <div className="size-7 rounded-lg bg-stone-100 grid place-items-center text-xs font-bold text-muted-foreground shrink-0 mt-0.5">{idx + 1}</div>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <textarea
+                        defaultValue={q.question}
+                        rows={2}
+                        onBlur={(e) => { if (e.target.value !== q.question) updateQuestion(q.id, { question: e.target.value }); }}
+                        className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                      />
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <label className="inline-flex items-center gap-1.5">
+                          Tiempo límite (s):
+                          <input
+                            type="number"
+                            defaultValue={q.time_limit_seconds}
+                            min={15} max={600}
+                            onBlur={(e) => { const v = parseInt(e.target.value); if (!isNaN(v) && v !== q.time_limit_seconds) updateQuestion(q.id, { time_limit_seconds: v }); }}
+                            className="w-20 bg-white border border-border rounded-lg px-2 py-1 text-xs"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                    <button onClick={() => removeQuestion(q.id)} className="size-8 grid place-items-center rounded-lg text-destructive hover:bg-destructive/10 shrink-0">
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
