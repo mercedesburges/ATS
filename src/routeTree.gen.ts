@@ -10,11 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppAdminIndexRouteImport } from './routes/app.admin.index'
+import { Route as AppAdminJobsRouteImport } from './routes/app.admin.jobs'
+import { Route as AppAdminClientsRouteImport } from './routes/app.admin.clients'
+import { Route as AppAdminClientsClientIdRouteImport } from './routes/app.admin.clients.$clientId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -22,30 +33,97 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminJobsRoute = AppAdminJobsRouteImport.update({
+  id: '/admin/jobs',
+  path: '/admin/jobs',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminClientsRoute = AppAdminClientsRouteImport.update({
+  id: '/admin/clients',
+  path: '/admin/clients',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminClientsClientIdRoute = AppAdminClientsClientIdRouteImport.update({
+  id: '/$clientId',
+  path: '/$clientId',
+  getParentRoute: () => AppAdminClientsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/app/': typeof AppIndexRoute
+  '/app/admin/clients': typeof AppAdminClientsRouteWithChildren
+  '/app/admin/jobs': typeof AppAdminJobsRoute
+  '/app/admin/': typeof AppAdminIndexRoute
+  '/app/admin/clients/$clientId': typeof AppAdminClientsClientIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/app': typeof AppIndexRoute
+  '/app/admin/clients': typeof AppAdminClientsRouteWithChildren
+  '/app/admin/jobs': typeof AppAdminJobsRoute
+  '/app/admin': typeof AppAdminIndexRoute
+  '/app/admin/clients/$clientId': typeof AppAdminClientsClientIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/app/': typeof AppIndexRoute
+  '/app/admin/clients': typeof AppAdminClientsRouteWithChildren
+  '/app/admin/jobs': typeof AppAdminJobsRoute
+  '/app/admin/': typeof AppAdminIndexRoute
+  '/app/admin/clients/$clientId': typeof AppAdminClientsClientIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/'
+    | '/app/admin/clients'
+    | '/app/admin/jobs'
+    | '/app/admin/'
+    | '/app/admin/clients/$clientId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth'
-  id: '__root__' | '/' | '/auth'
+  to:
+    | '/'
+    | '/auth'
+    | '/app'
+    | '/app/admin/clients'
+    | '/app/admin/jobs'
+    | '/app/admin'
+    | '/app/admin/clients/$clientId'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/'
+    | '/app/admin/clients'
+    | '/app/admin/jobs'
+    | '/app/admin/'
+    | '/app/admin/clients/$clientId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
 }
 
@@ -58,6 +136,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -65,11 +150,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin/': {
+      id: '/app/admin/'
+      path: '/admin'
+      fullPath: '/app/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin/jobs': {
+      id: '/app/admin/jobs'
+      path: '/admin/jobs'
+      fullPath: '/app/admin/jobs'
+      preLoaderRoute: typeof AppAdminJobsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin/clients': {
+      id: '/app/admin/clients'
+      path: '/admin/clients'
+      fullPath: '/app/admin/clients'
+      preLoaderRoute: typeof AppAdminClientsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin/clients/$clientId': {
+      id: '/app/admin/clients/$clientId'
+      path: '/$clientId'
+      fullPath: '/app/admin/clients/$clientId'
+      preLoaderRoute: typeof AppAdminClientsClientIdRouteImport
+      parentRoute: typeof AppAdminClientsRoute
+    }
   }
 }
 
+interface AppAdminClientsRouteChildren {
+  AppAdminClientsClientIdRoute: typeof AppAdminClientsClientIdRoute
+}
+
+const AppAdminClientsRouteChildren: AppAdminClientsRouteChildren = {
+  AppAdminClientsClientIdRoute: AppAdminClientsClientIdRoute,
+}
+
+const AppAdminClientsRouteWithChildren = AppAdminClientsRoute._addFileChildren(
+  AppAdminClientsRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppIndexRoute: typeof AppIndexRoute
+  AppAdminClientsRoute: typeof AppAdminClientsRouteWithChildren
+  AppAdminJobsRoute: typeof AppAdminJobsRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppIndexRoute: AppIndexRoute,
+  AppAdminClientsRoute: AppAdminClientsRouteWithChildren,
+  AppAdminJobsRoute: AppAdminJobsRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
