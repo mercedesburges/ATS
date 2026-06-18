@@ -110,7 +110,14 @@ export const Route = createFileRoute("/api/public/auth/linkedin/callback")({
         }
 
         // 5) Link & enrich candidate with LinkedIn data (don't overwrite if already set)
-        const patch: Record<string, unknown> = {
+        const patch: {
+          auth_user_id: string;
+          linkedin_sub: string;
+          linkedin_linked_at: string;
+          email: string;
+          full_name?: string;
+          photo_url?: string;
+        } = {
           auth_user_id: userId,
           linkedin_sub: profile.sub,
           linkedin_linked_at: new Date().toISOString(),

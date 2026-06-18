@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as CandidateLoginRouteImport } from './routes/candidate.login'
 import { Route as AppCandidateRouteImport } from './routes/app.candidate'
 import { Route as AppPortalIndexRouteImport } from './routes/app.portal.index'
 import { Route as AppCandidateIndexRouteImport } from './routes/app.candidate.index'
@@ -36,6 +37,8 @@ import { Route as AppPortalJobsJobIdRouteImport } from './routes/app.portal.jobs
 import { Route as AppAdminJobsJobIdRouteImport } from './routes/app.admin.jobs.$jobId'
 import { Route as AppAdminClientsClientIdRouteImport } from './routes/app.admin.clients.$clientId'
 import { Route as AppAdminCandidatesCandidateIdRouteImport } from './routes/app.admin.candidates.$candidateId'
+import { Route as ApiPublicAuthLinkedinStartRouteImport } from './routes/api/public/auth/linkedin/start'
+import { Route as ApiPublicAuthLinkedinCallbackRouteImport } from './routes/api/public/auth/linkedin/callback'
 import { Route as AppPortalJobsJobIdCandidatesCandidateIdRouteImport } from './routes/app.portal.jobs.$jobId.candidates.$candidateId'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
@@ -66,6 +69,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CandidateLoginRoute = CandidateLoginRouteImport.update({
+  id: '/candidate/login',
+  path: '/candidate/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppCandidateRoute = AppCandidateRouteImport.update({
@@ -177,6 +185,18 @@ const AppAdminCandidatesCandidateIdRoute =
     path: '/$candidateId',
     getParentRoute: () => AppAdminCandidatesRoute,
   } as any)
+const ApiPublicAuthLinkedinStartRoute =
+  ApiPublicAuthLinkedinStartRouteImport.update({
+    id: '/api/public/auth/linkedin/start',
+    path: '/api/public/auth/linkedin/start',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAuthLinkedinCallbackRoute =
+  ApiPublicAuthLinkedinCallbackRouteImport.update({
+    id: '/api/public/auth/linkedin/callback',
+    path: '/api/public/auth/linkedin/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppPortalJobsJobIdCandidatesCandidateIdRoute =
   AppPortalJobsJobIdCandidatesCandidateIdRouteImport.update({
     id: '/candidates/$candidateId',
@@ -190,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/candidate': typeof AppCandidateRouteWithChildren
+  '/candidate/login': typeof CandidateLoginRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/': typeof AppIndexRoute
   '/app/admin/automations': typeof AppAdminAutomationsRoute
@@ -212,12 +233,15 @@ export interface FileRoutesByFullPath {
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/app/admin/clients/': typeof AppAdminClientsIndexRoute
+  '/api/public/auth/linkedin/callback': typeof ApiPublicAuthLinkedinCallbackRoute
+  '/api/public/auth/linkedin/start': typeof ApiPublicAuthLinkedinStartRoute
   '/app/portal/jobs/$jobId/candidates/$candidateId': typeof AppPortalJobsJobIdCandidatesCandidateIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/candidate/login': typeof CandidateLoginRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app': typeof AppIndexRoute
   '/app/admin/automations': typeof AppAdminAutomationsRoute
@@ -240,6 +264,8 @@ export interface FileRoutesByTo {
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/app/admin/clients': typeof AppAdminClientsIndexRoute
+  '/api/public/auth/linkedin/callback': typeof ApiPublicAuthLinkedinCallbackRoute
+  '/api/public/auth/linkedin/start': typeof ApiPublicAuthLinkedinStartRoute
   '/app/portal/jobs/$jobId/candidates/$candidateId': typeof AppPortalJobsJobIdCandidatesCandidateIdRoute
 }
 export interface FileRoutesById {
@@ -249,6 +275,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/candidate': typeof AppCandidateRouteWithChildren
+  '/candidate/login': typeof CandidateLoginRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/': typeof AppIndexRoute
   '/app/admin/automations': typeof AppAdminAutomationsRoute
@@ -271,6 +298,8 @@ export interface FileRoutesById {
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/app/admin/clients/': typeof AppAdminClientsIndexRoute
+  '/api/public/auth/linkedin/callback': typeof ApiPublicAuthLinkedinCallbackRoute
+  '/api/public/auth/linkedin/start': typeof ApiPublicAuthLinkedinStartRoute
   '/app/portal/jobs/$jobId/candidates/$candidateId': typeof AppPortalJobsJobIdCandidatesCandidateIdRoute
 }
 export interface FileRouteTypes {
@@ -281,6 +310,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/unsubscribe'
     | '/app/candidate'
+    | '/candidate/login'
     | '/email/unsubscribe'
     | '/app/'
     | '/app/admin/automations'
@@ -303,12 +333,15 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
     | '/app/admin/clients/'
+    | '/api/public/auth/linkedin/callback'
+    | '/api/public/auth/linkedin/start'
     | '/app/portal/jobs/$jobId/candidates/$candidateId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/unsubscribe'
+    | '/candidate/login'
     | '/email/unsubscribe'
     | '/app'
     | '/app/admin/automations'
@@ -331,6 +364,8 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
     | '/app/admin/clients'
+    | '/api/public/auth/linkedin/callback'
+    | '/api/public/auth/linkedin/start'
     | '/app/portal/jobs/$jobId/candidates/$candidateId'
   id:
     | '__root__'
@@ -339,6 +374,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/unsubscribe'
     | '/app/candidate'
+    | '/candidate/login'
     | '/email/unsubscribe'
     | '/app/'
     | '/app/admin/automations'
@@ -361,6 +397,8 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
     | '/app/admin/clients/'
+    | '/api/public/auth/linkedin/callback'
+    | '/api/public/auth/linkedin/start'
     | '/app/portal/jobs/$jobId/candidates/$candidateId'
   fileRoutesById: FileRoutesById
 }
@@ -369,6 +407,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
+  CandidateLoginRoute: typeof CandidateLoginRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -376,6 +415,8 @@ export interface RootRouteChildren {
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
+  ApiPublicAuthLinkedinCallbackRoute: typeof ApiPublicAuthLinkedinCallbackRoute
+  ApiPublicAuthLinkedinStartRoute: typeof ApiPublicAuthLinkedinStartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -420,6 +461,13 @@ declare module '@tanstack/react-router' {
       path: '/email/unsubscribe'
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/candidate/login': {
+      id: '/candidate/login'
+      path: '/candidate/login'
+      fullPath: '/candidate/login'
+      preLoaderRoute: typeof CandidateLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/candidate': {
@@ -569,6 +617,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminCandidatesCandidateIdRouteImport
       parentRoute: typeof AppAdminCandidatesRoute
     }
+    '/api/public/auth/linkedin/start': {
+      id: '/api/public/auth/linkedin/start'
+      path: '/api/public/auth/linkedin/start'
+      fullPath: '/api/public/auth/linkedin/start'
+      preLoaderRoute: typeof ApiPublicAuthLinkedinStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/auth/linkedin/callback': {
+      id: '/api/public/auth/linkedin/callback'
+      path: '/api/public/auth/linkedin/callback'
+      fullPath: '/api/public/auth/linkedin/callback'
+      preLoaderRoute: typeof ApiPublicAuthLinkedinCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/portal/jobs/$jobId/candidates/$candidateId': {
       id: '/app/portal/jobs/$jobId/candidates/$candidateId'
       path: '/candidates/$candidateId'
@@ -665,6 +727,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   UnsubscribeRoute: UnsubscribeRoute,
+  CandidateLoginRoute: CandidateLoginRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
@@ -672,6 +735,8 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
+  ApiPublicAuthLinkedinCallbackRoute: ApiPublicAuthLinkedinCallbackRoute,
+  ApiPublicAuthLinkedinStartRoute: ApiPublicAuthLinkedinStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
