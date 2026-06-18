@@ -4,8 +4,9 @@ import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Plus, Trash2, User, Send, Copy, Sparkles, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Trash2, User, Send, Copy, Sparkles, CheckCircle2, FileText, Briefcase, Video } from "lucide-react";
 import { inviteCandidate, processInterview } from "@/lib/interview.functions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/app/admin/candidates/$candidateId")({
   component: CandidateEditor,
@@ -15,21 +16,24 @@ function CandidateEditor() {
   const { candidateId } = useParams({ from: "/app/admin/candidates/$candidateId" });
   const qc = useQueryClient();
 
-  const { data: candidate, refetch } = useQuery({
+  const { data: candidate, refetch, isLoading, error } = useQuery({
     queryKey: ["candidate-edit", candidateId],
     queryFn: async () => {
-      const { data } = await supabase.from("candidates").select("*,jobs(id,title,clients(name)),candidate_skills(*),candidate_experiences(*),interview_videos(*)").eq("id", candidateId).single();
+      const { data, error } = await supabase.from("candidates").select("*,jobs(id,title,clients(name)),candidate_skills(*),candidate_experiences(*),interview_videos(*)").eq("id", candidateId).maybeSingle();
+      if (error) throw error;
       return data;
     },
   });
 
-  if (!candidate) return <div className="p-8 text-muted-foreground">Cargando…</div>;
+  if (isLoading) return <div className="p-8 text-muted-foreground">Cargando…</div>;
+  if (error) return <div className="p-8 text-destructive">Error: {(error as any).message}</div>;
+  if (!candidate) return <div className="p-8 text-muted-foreground">Candidato no encontrado.</div>;
 
   return (
     <div>
       <header className="px-8 py-6 border-b border-border">
         <Link to="/app/admin/candidates" className="text-xs text-muted-foreground inline-flex items-center gap-1"><ArrowLeft className="size-3" /> Volver</Link>
-        <div className="mt-2 flex items-end justify-between">
+        <div className="mt-2 flex items-end justify-between flex-wrap gap-3">
           <div>
             <p className="text-sm text-muted-foreground">{candidate.jobs?.clients?.name} · {candidate.jobs?.title}</p>
             <h1 className="font-display text-4xl mt-1">{candidate.full_name}</h1>
@@ -38,18 +42,32 @@ function CandidateEditor() {
         </div>
       </header>
 
-      <div className="p-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="space-y-6">
-          <PhotoSection candidate={candidate} onUpdate={refetch} />
-          <BasicInfo candidate={candidate} onUpdate={refetch} />
-          <CvSection candidate={candidate} onUpdate={refetch} />
-        </div>
-        <SkillsSection candidate={candidate} onUpdate={refetch} />
-        <div className="space-y-6">
-          <InterviewAdminSection candidate={candidate} onUpdate={refetch} />
-          <ExperienceSection candidate={candidate} onUpdate={refetch} />
-          <VideoSection candidate={candidate} onUpdate={refetch} />
-        </div>
+      <div className="p-8">
+        <Tabs defaultValue="perfil" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="perfil" className="gap-2"><FileText className="size-4" /> Perfil & CV</TabsTrigger>
+            <TabsTrigger value="skills" className="gap-2"><Briefcase className="size-4" /> Skills & Experiencia</TabsTrigger>
+            <TabsTrigger value="entrevista" className="gap-2"><Video className="size-4" /> Entrevista AI</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="perfil" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <PhotoSection candidate={candidate} onUpdate={refetch} />
+            <div className="space-y-6">
+              <BasicInfo candidate={candidate} onUpdate={refetch} />
+              <CvSection candidate={candidate} onUpdate={refetch} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="skills" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SkillsSection candidate={candidate} onUpdate={refetch} />
+            <ExperienceSection candidate={candidate} onUpdate={refetch} />
+          </TabsContent>
+
+          <TabsContent value="entrevista" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <InterviewAdminSection candidate={candidate} onUpdate={refetch} />
+            <VideoSection candidate={candidate} onUpdate={refetch} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
