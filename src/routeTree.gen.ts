@@ -17,6 +17,7 @@ import { Route as AppPortalIndexRouteImport } from './routes/app.portal.index'
 import { Route as AppAdminIndexRouteImport } from './routes/app.admin.index'
 import { Route as AppAdminJobsRouteImport } from './routes/app.admin.jobs'
 import { Route as AppAdminCandidatesRouteImport } from './routes/app.admin.candidates'
+import { Route as AppAdminAutomationsRouteImport } from './routes/app.admin.automations'
 import { Route as AppAdminClientsIndexRouteImport } from './routes/app.admin.clients.index'
 import { Route as AppPortalJobsJobIdRouteImport } from './routes/app.portal.jobs.$jobId'
 import { Route as AppAdminJobsJobIdRouteImport } from './routes/app.admin.jobs.$jobId'
@@ -64,6 +65,11 @@ const AppAdminCandidatesRoute = AppAdminCandidatesRouteImport.update({
   path: '/admin/candidates',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminAutomationsRoute = AppAdminAutomationsRouteImport.update({
+  id: '/admin/automations',
+  path: '/admin/automations',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminClientsIndexRoute = AppAdminClientsIndexRouteImport.update({
   id: '/admin/clients/',
   path: '/admin/clients/',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/app/': typeof AppIndexRoute
+  '/app/admin/automations': typeof AppAdminAutomationsRoute
   '/app/admin/candidates': typeof AppAdminCandidatesRouteWithChildren
   '/app/admin/jobs': typeof AppAdminJobsRouteWithChildren
   '/app/admin/': typeof AppAdminIndexRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app': typeof AppIndexRoute
+  '/app/admin/automations': typeof AppAdminAutomationsRoute
   '/app/admin/candidates': typeof AppAdminCandidatesRouteWithChildren
   '/app/admin/jobs': typeof AppAdminJobsRouteWithChildren
   '/app/admin': typeof AppAdminIndexRoute
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/app/': typeof AppIndexRoute
+  '/app/admin/automations': typeof AppAdminAutomationsRoute
   '/app/admin/candidates': typeof AppAdminCandidatesRouteWithChildren
   '/app/admin/jobs': typeof AppAdminJobsRouteWithChildren
   '/app/admin/': typeof AppAdminIndexRoute
@@ -152,6 +161,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/app/'
+    | '/app/admin/automations'
     | '/app/admin/candidates'
     | '/app/admin/jobs'
     | '/app/admin/'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/app'
+    | '/app/admin/automations'
     | '/app/admin/candidates'
     | '/app/admin/jobs'
     | '/app/admin'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/app/'
+    | '/app/admin/automations'
     | '/app/admin/candidates'
     | '/app/admin/jobs'
     | '/app/admin/'
@@ -257,6 +269,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/candidates'
       fullPath: '/app/admin/candidates'
       preLoaderRoute: typeof AppAdminCandidatesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin/automations': {
+      id: '/app/admin/automations'
+      path: '/admin/automations'
+      fullPath: '/app/admin/automations'
+      preLoaderRoute: typeof AppAdminAutomationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/admin/clients/': {
@@ -341,6 +360,7 @@ const AppPortalJobsJobIdRouteWithChildren =
 
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
+  AppAdminAutomationsRoute: typeof AppAdminAutomationsRoute
   AppAdminCandidatesRoute: typeof AppAdminCandidatesRouteWithChildren
   AppAdminJobsRoute: typeof AppAdminJobsRouteWithChildren
   AppAdminIndexRoute: typeof AppAdminIndexRoute
@@ -352,6 +372,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
+  AppAdminAutomationsRoute: AppAdminAutomationsRoute,
   AppAdminCandidatesRoute: AppAdminCandidatesRouteWithChildren,
   AppAdminJobsRoute: AppAdminJobsRouteWithChildren,
   AppAdminIndexRoute: AppAdminIndexRoute,

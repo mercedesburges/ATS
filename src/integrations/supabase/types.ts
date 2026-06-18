@@ -323,6 +323,42 @@ export type Database = {
         }
         Relationships: []
       }
+      email_automations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_enabled: boolean
+          name: string
+          prompt: string
+          subject: string
+          trigger_type: Database["public"]["Enums"]["automation_trigger"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean
+          name: string
+          prompt: string
+          subject?: string
+          trigger_type: Database["public"]["Enums"]["automation_trigger"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean
+          name?: string
+          prompt?: string
+          subject?: string
+          trigger_type?: Database["public"]["Enums"]["automation_trigger"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       interview_videos: {
         Row: {
           ai_analysis: Json | null
@@ -360,6 +396,44 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: false
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_metrics: {
+        Row: {
+          created_at: string
+          hiring_team_alert_days: number
+          hiring_team_warn_days: number
+          job_id: string
+          recruiter_alert_days: number
+          recruiter_warn_days: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hiring_team_alert_days?: number
+          hiring_team_warn_days?: number
+          job_id: string
+          recruiter_alert_days?: number
+          recruiter_warn_days?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hiring_team_alert_days?: number
+          hiring_team_warn_days?: number
+          job_id?: string
+          recruiter_alert_days?: number
+          recruiter_warn_days?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_metrics_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -532,6 +606,11 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "client"
+      automation_trigger:
+        | "cv_uploaded"
+        | "stage_changed"
+        | "candidate_rejected"
+        | "offer_sent"
       candidate_visibility: "draft" | "published"
       contact_type: "hr" | "hiring_manager" | "team_member"
     }
@@ -662,6 +741,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "client"],
+      automation_trigger: [
+        "cv_uploaded",
+        "stage_changed",
+        "candidate_rejected",
+        "offer_sent",
+      ],
       candidate_visibility: ["draft", "published"],
       contact_type: ["hr", "hiring_manager", "team_member"],
     },
