@@ -53,7 +53,10 @@ function AppLayout() {
   const clientNav = [
     { to: "/app/portal", label: "Mis Puestos", icon: Briefcase },
   ];
-  const nav = isAdmin ? adminNav : clientNav;
+  const candidateNav = [
+    { to: "/app/candidate", label: "Mi entrevista", icon: Briefcase },
+  ];
+  const nav = isAdmin ? adminNav : role === "candidate" ? candidateNav : clientNav;
 
   const initials = ((profile?.first_name?.[0] ?? user.email?.[0] ?? "?") + (profile?.last_name?.[0] ?? "")).toUpperCase();
 

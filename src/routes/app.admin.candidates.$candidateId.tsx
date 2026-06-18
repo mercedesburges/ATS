@@ -1,9 +1,11 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Plus, Trash2, User } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Trash2, User, Send, Copy, Sparkles, CheckCircle2 } from "lucide-react";
+import { inviteCandidate, processInterview } from "@/lib/interview.functions";
 
 export const Route = createFileRoute("/app/admin/candidates/$candidateId")({
   component: CandidateEditor,
@@ -44,6 +46,7 @@ function CandidateEditor() {
         </div>
         <SkillsSection candidate={candidate} onUpdate={refetch} />
         <div className="space-y-6">
+          <InterviewAdminSection candidate={candidate} onUpdate={refetch} />
           <ExperienceSection candidate={candidate} onUpdate={refetch} />
           <VideoSection candidate={candidate} onUpdate={refetch} />
         </div>
