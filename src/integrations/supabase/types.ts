@@ -535,6 +535,36 @@ export type Database = {
           },
         ]
       }
+      metric_defaults: {
+        Row: {
+          created_at: string
+          hiring_team_alert_days: number
+          hiring_team_warn_days: number
+          recruiter_alert_days: number
+          recruiter_warn_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hiring_team_alert_days?: number
+          hiring_team_warn_days?: number
+          recruiter_alert_days?: number
+          recruiter_warn_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          hiring_team_alert_days?: number
+          hiring_team_warn_days?: number
+          recruiter_alert_days?: number
+          recruiter_warn_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -612,7 +642,7 @@ export type Database = {
         | "candidate_rejected"
         | "offer_sent"
       candidate_visibility: "draft" | "published"
-      contact_type: "hr" | "hiring_manager" | "team_member"
+      contact_type: "hr" | "hiring_manager" | "team_member" | "recruiter"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -748,7 +778,7 @@ export const Constants = {
         "offer_sent",
       ],
       candidate_visibility: ["draft", "published"],
-      contact_type: ["hr", "hiring_manager", "team_member"],
+      contact_type: ["hr", "hiring_manager", "team_member", "recruiter"],
     },
   },
 } as const

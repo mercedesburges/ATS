@@ -13,6 +13,7 @@ const CONTACT_TYPE_LABEL: Record<string, string> = {
   hr: "HR",
   hiring_manager: "Hiring Manager",
   team_member: "Team Member",
+  recruiter: "Recruiter",
 };
 
 function ClientDetail() {
@@ -403,6 +404,7 @@ function NewJobDialog({ clientId, onClose, onCreated }: { clientId: string; onCl
 }
 
 function NewContactDialog({ clientId, onClose, onCreated }: { clientId: string; onClose: () => void; onCreated: () => void }) {
+  const [mode, setMode] = useState<"new" | "existing">("new");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -411,17 +413,41 @@ function NewContactDialog({ clientId, onClose, onCreated }: { clientId: string; 
   const [contactType, setContactType] = useState<string>("hr");
   const [loading, setLoading] = useState(false);
 
+  const { data: existing } = useQuery({
+    queryKey: ["all-contacts-pick", clientId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("client_members")
+        .select("id,first_name,last_name,invited_email,contact_area,contact_position,contact_type,client_id,clients(name)")
+        .neq("client_id", clientId)
+        .order("created_at", { ascending: false });
+      // dedupe by email — first occurrence wins
+      const seen = new Set<string>();
+      return (data ?? []).filter((c: any) => {
+        const k = (c.invited_email ?? "").toLowerCase();
+        if (!k || seen.has(k)) return false;
+        seen.add(k); return true;
+      });
+    },
+  });
+
+  function applyExisting(id: string) {
+    const c = (existing ?? []).find((x: any) => x.id === id);
+    if (!c) return;
+    setFirstName(c.first_name ?? "");
+    setLastName(c.last_name ?? "");
+    setEmail(c.invited_email ?? "");
+    setArea(c.contact_area ?? "");
+    setPosition(c.contact_position ?? "");
+    setContactType(c.contact_type ?? "hr");
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
-      // Check if a user already exists with this email in profiles
       const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", email)
-        .maybeSingle();
-
+        .from("profiles").select("id").eq("email", email).maybeSingle();
       const { error } = await supabase.from("client_members").insert({
         client_id: clientId,
         user_id: existingProfile?.id ?? null,
@@ -433,14 +459,12 @@ function NewContactDialog({ clientId, onClose, onCreated }: { clientId: string; 
         contact_type: contactType as any,
       });
       if (error) throw error;
-      toast.success(existingProfile ? "Contacto vinculado." : "Contacto invitado. Cuando se registre con este email tendrá acceso.");
+      toast.success(existingProfile ? "Contacto vinculado." : "Contacto invitado.");
       onCreated();
       onClose();
     } catch (err: any) {
-      toast.error(err.message ?? "Error al agregar contacto");
-    } finally {
-      setLoading(false);
-    }
+      toast.error(err.message?.includes("duplicate") ? "Este contacto ya está cargado en este cliente." : (err.message ?? "Error al agregar contacto"));
+    } finally { setLoading(false); }
   }
 
   return (
@@ -450,7 +474,34 @@ function NewContactDialog({ clientId, onClose, onCreated }: { clientId: string; 
           <h2 className="font-display text-2xl">Agregar contacto</h2>
           <button onClick={onClose} className="size-8 rounded-full hover:bg-muted grid place-items-center"><X className="size-4" /></button>
         </div>
+
+        <div className="px-6 pt-4">
+          <div className="inline-flex bg-stone-100 p-1 rounded-full text-xs font-bold">
+            <button type="button" onClick={() => setMode("new")} className={`px-4 py-1.5 rounded-full ${mode === "new" ? "bg-white shadow-sm" : "text-muted-foreground"}`}>Nuevo</button>
+            <button type="button" onClick={() => setMode("existing")} className={`px-4 py-1.5 rounded-full ${mode === "existing" ? "bg-white shadow-sm" : "text-muted-foreground"}`}>Usar existente</button>
+          </div>
+        </div>
+
         <form onSubmit={submit} className="p-6 space-y-4">
+          {mode === "existing" && (
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Elegí un contacto cargado en otro cliente</label>
+              <select
+                onChange={(e) => applyExisting(e.target.value)}
+                className="mt-1 w-full bg-white border border-border rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                defaultValue=""
+              >
+                <option value="" disabled>— Seleccioná —</option>
+                {(existing ?? []).map((c: any) => (
+                  <option key={c.id} value={c.id}>
+                    {[c.first_name, c.last_name].filter(Boolean).join(" ") || c.invited_email} — {c.clients?.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-muted-foreground mt-1.5">Los datos se prellenan abajo. Podés ajustar antes de guardar.</p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <Field label="Nombre" value={firstName} onChange={setFirstName} required />
             <Field label="Apellido" value={lastName} onChange={setLastName} required />
@@ -470,8 +521,8 @@ function NewContactDialog({ clientId, onClose, onCreated }: { clientId: string; 
               <option value="hr">HR</option>
               <option value="hiring_manager">Hiring Manager</option>
               <option value="team_member">Team Member</option>
+              <option value="recruiter">Recruiter</option>
             </select>
-            <p className="text-[11px] text-muted-foreground mt-1.5">Más adelante vas a poder definir qué puede hacer cada tipo en la plataforma.</p>
           </div>
           <button type="submit" disabled={loading} className="w-full py-3 bg-primary text-primary-foreground rounded-full text-sm font-bold disabled:opacity-50">
             {loading ? "..." : "Agregar contacto"}
