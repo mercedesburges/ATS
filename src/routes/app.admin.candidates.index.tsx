@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,21 +14,45 @@ export const Route = createFileRoute("/app/admin/candidates/")({
 function CandidatesList() {
   const qc = useQueryClient();
   const [showNew, setShowNew] = useState(false);
+  const [clientFilter, setClientFilter] = useState("");
+  const [jobFilter, setJobFilter] = useState("");
 
   const { data: candidates } = useQuery({
     queryKey: ["all-candidates"],
     queryFn: async () => {
       const { data } = await supabase
         .from("candidates")
-        .select("id,full_name,headline,photo_url,visibility,years_experience,jobs(title,clients(name))")
+        .select("id,full_name,headline,photo_url,visibility,years_experience,job_id,jobs(id,title,client_id,clients(id,name))")
         .order("created_at", { ascending: false });
       return data ?? [];
     },
   });
 
+  const clients = useMemo(() => {
+    const m = new Map<string, string>();
+    candidates?.forEach((c: any) => {
+      if (c.jobs?.clients?.id) m.set(c.jobs.clients.id, c.jobs.clients.name);
+    });
+    return Array.from(m, ([id, name]) => ({ id, name }));
+  }, [candidates]);
+
+  const jobs = useMemo(() => {
+    const m = new Map<string, { id: string; title: string; clientId: string }>();
+    candidates?.forEach((c: any) => {
+      if (c.jobs?.id) m.set(c.jobs.id, { id: c.jobs.id, title: c.jobs.title, clientId: c.jobs.client_id });
+    });
+    return Array.from(m.values()).filter((j) => !clientFilter || j.clientId === clientFilter);
+  }, [candidates, clientFilter]);
+
+  const filtered = candidates?.filter((c: any) => {
+    if (clientFilter && c.jobs?.clients?.id !== clientFilter) return false;
+    if (jobFilter && c.job_id !== jobFilter) return false;
+    return true;
+  });
+
   return (
     <div>
-      <header className="px-8 py-6 border-b border-border flex justify-between items-end">
+      <header className="px-8 py-6 border-b border-border flex justify-between items-end flex-wrap gap-3">
         <div>
           <p className="text-sm text-muted-foreground">Talento en proceso</p>
           <h1 className="font-display text-4xl mt-1">Candidatos</h1>
@@ -40,25 +64,54 @@ function CandidatesList() {
           <Plus className="size-4" /> Nuevo candidato
         </button>
       </header>
-      <section className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {candidates?.length === 0 && (
+
+      <div className="px-8 pt-6 flex flex-wrap gap-3 items-center">
+        <select
+          value={clientFilter}
+          onChange={(e) => { setClientFilter(e.target.value); setJobFilter(""); }}
+          className="bg-white border border-border rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          <option value="">Todos los clientes</option>
+          {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <select
+          value={jobFilter}
+          onChange={(e) => setJobFilter(e.target.value)}
+          className="bg-white border border-border rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          <option value="">Todas las posiciones</option>
+          {jobs.map((j) => <option key={j.id} value={j.id}>{j.title}</option>)}
+        </select>
+        {(clientFilter || jobFilter) && (
+          <button onClick={() => { setClientFilter(""); setJobFilter(""); }} className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+            <X className="size-3" /> Limpiar filtros
+          </button>
+        )}
+        <span className="text-xs text-muted-foreground ml-auto">{filtered?.length ?? 0} candidato(s)</span>
+      </div>
+
+      <section className="p-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {filtered?.length === 0 && (
           <div className="col-span-full bg-white rounded-3xl border border-border p-12 text-center">
             <Users className="size-10 text-muted-foreground mx-auto mb-4" />
             <p className="font-display text-2xl">Sin candidatos</p>
             <p className="text-sm text-muted-foreground mt-2">Sumá el primero asignándolo a un puesto activo.</p>
           </div>
         )}
-        {candidates?.map((c: any) => (
-          <Link key={c.id} to="/app/admin/candidates/$candidateId" params={{ candidateId: c.id }} className="bg-white rounded-3xl border border-border p-4 hover:border-primary/20">
-            <div className="aspect-[4/5] bg-stone-100 rounded-2xl mb-3 overflow-hidden">
-              {c.photo_url ? <img src={c.photo_url} alt="" className="w-full h-full object-cover" /> : <div className="h-full grid place-items-center text-stone-400 text-xs uppercase tracking-widest">Sin foto</div>}
-            </div>
-            <div className="flex justify-between items-start">
-              <div className="min-w-0">
-                <h3 className="font-display text-xl truncate">{c.full_name}</h3>
-                <p className="text-xs text-muted-foreground truncate">{c.jobs?.clients?.name} · {c.jobs?.title}</p>
+        {filtered?.map((c: any) => (
+          <Link key={c.id} to="/app/admin/candidates/$candidateId" params={{ candidateId: c.id }} className="bg-white rounded-2xl border border-border p-3 hover:border-primary/30 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="size-12 shrink-0 bg-stone-100 rounded-full overflow-hidden">
+                {c.photo_url ? <img src={c.photo_url} alt="" className="w-full h-full object-cover" /> : <div className="h-full grid place-items-center text-stone-400 text-[9px] uppercase tracking-wider">N/A</div>}
               </div>
-              <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full shrink-0 ${c.visibility === "published" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-display text-base truncate">{c.full_name}</h3>
+                <p className="text-[11px] text-muted-foreground truncate">{c.jobs?.clients?.name} · {c.jobs?.title}</p>
+              </div>
+            </div>
+            <div className="mt-3 flex justify-between items-center">
+              <span className="text-[10px] text-muted-foreground truncate">{c.headline || "—"}</span>
+              <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${c.visibility === "published" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
                 {c.visibility === "published" ? "Visible" : "Borrador"}
               </span>
             </div>
