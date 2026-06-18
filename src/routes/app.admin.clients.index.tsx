@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Building2, X } from "lucide-react";
@@ -18,7 +18,7 @@ function ClientsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id,name,industry,is_active,client_members(id)")
+        .select("id,name,industry,logo_url,jobs(id,is_active)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -40,36 +40,21 @@ function ClientsPage() {
         </button>
       </header>
 
-      <section className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-reveal">
+      <section className="p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-reveal">
         {clients?.length === 0 && (
           <div className="col-span-full bg-white rounded-3xl border border-border p-12 text-center">
             <Building2 className="size-10 text-muted-foreground mx-auto mb-4" />
             <p className="font-display text-2xl">Todavía no hay clientes</p>
-            <p className="text-sm text-muted-foreground mt-2">Creá el primero para empezar a cargar puestos y candidatos.</p>
+            <p className="text-sm text-muted-foreground mt-2">Creá el primero para empezar a cargar puestos.</p>
           </div>
         )}
-        {clients?.map((c: any) => (
-          <Link
-            key={c.id}
-            to="/app/admin/clients/$clientId"
-            params={{ clientId: c.id }}
-            className="group bg-white rounded-3xl border border-border p-6 hover:border-primary/20 transition-all"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="size-12 rounded-2xl bg-accent-gold/20 grid place-items-center">
-                <Building2 className="size-5 text-accent-gold" />
-              </div>
-              <span className={`ml-auto text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${c.is_active ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>
-                {c.is_active ? "Activo" : "Pausado"}
-              </span>
-            </div>
-            <h3 className="font-display text-2xl">{c.name}</h3>
-            <p className="text-sm text-muted-foreground mt-1">{c.industry ?? "Sin industria"}</p>
-            <p className="text-xs text-muted-foreground mt-4">
-              {c.client_members?.length ?? 0} {c.client_members?.length === 1 ? "contacto" : "contactos"} vinculados
-            </p>
-          </Link>
-        ))}
+        {clients?.map((c: any) => {
+          const activeJobs = (c.jobs ?? []).filter((j: any) => j.is_active).length;
+          const isActive = activeJobs > 0;
+          return (
+            <ClientCard key={c.id} client={c} activeJobs={activeJobs} isActive={isActive} />
+          );
+        })}
       </section>
 
       {showNew && (
@@ -79,6 +64,46 @@ function ClientsPage() {
         />
       )}
     </div>
+  );
+}
+
+function ClientCard({ client, activeJobs, isActive }: { client: any; activeJobs: number; isActive: boolean }) {
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancel = false;
+    if (!client.logo_url) { setLogoUrl(null); return; }
+    supabase.storage.from("client-logos").createSignedUrl(client.logo_url, 60 * 60).then(({ data }) => {
+      if (!cancel) setLogoUrl(data?.signedUrl ?? null);
+    });
+    return () => { cancel = true; };
+  }, [client.logo_url]);
+
+  return (
+    <Link
+      to="/app/admin/clients/$clientId"
+      params={{ clientId: client.id }}
+      className="group bg-white rounded-2xl border border-border p-4 hover:border-primary/30 transition-all flex flex-col gap-3"
+    >
+      <div className="flex items-center gap-3">
+        <div className="size-10 rounded-xl bg-stone-100 grid place-items-center overflow-hidden shrink-0">
+          {logoUrl ? (
+            <img src={logoUrl} alt={client.name} className="size-full object-cover" />
+          ) : (
+            <Building2 className="size-4 text-muted-foreground" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-display text-base truncate">{client.name}</h3>
+          {client.industry && <p className="text-[11px] text-muted-foreground truncate">{client.industry}</p>}
+        </div>
+        <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${isActive ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>
+          {isActive ? "Activo" : "Inactivo"}
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        <span className="font-bold text-foreground">{activeJobs}</span> {activeJobs === 1 ? "posición activa" : "posiciones activas"}
+      </p>
+    </Link>
   );
 }
 
@@ -93,7 +118,7 @@ function NewClientDialog({ onClose, onCreated }: { onClose: () => void; onCreate
     try {
       const { error } = await supabase.from("clients").insert({ name, industry: industry || null });
       if (error) throw error;
-      toast.success("Cliente creado. Ahora podés agregarle contactos desde su ficha.");
+      toast.success("Cliente creado. Ahora podés agregarle contactos y puestos desde su ficha.");
       onCreated();
       onClose();
     } catch (err: any) {
