@@ -58,7 +58,7 @@ function AppLayout() {
       <aside className="w-64 border-r border-border p-6 flex flex-col gap-8 shrink-0">
         <div className="flex items-center gap-3 px-2">
           <div className="size-8 bg-primary rounded-lg" />
-          <span className="font-display text-xl tracking-tight">KINDRED</span>
+          <span className="font-display text-xl tracking-tight">VIVIDTALENT</span>
         </div>
 
         <nav className="flex flex-col gap-1">

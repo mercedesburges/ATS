@@ -11,7 +11,7 @@ export const Route = createFileRoute("/auth")({
   },
   head: () => ({
     meta: [
-      { title: "Ingresar — Kindred" },
+      { title: "Ingresar — Vividtalent" },
       { name: "description", content: "Accedé a tu portal de candidatos." },
     ],
   }),
@@ -69,17 +69,17 @@ function AuthPage() {
       <div className="hidden lg:flex flex-col justify-between p-12 bg-primary text-primary-foreground relative overflow-hidden">
         <div className="flex items-center gap-3">
           <div className="size-9 bg-primary-foreground/15 rounded-lg" />
-          <span className="font-display text-2xl tracking-tight">KINDRED</span>
+          <span className="font-display text-2xl tracking-tight">VIVIDTALENT</span>
         </div>
         <div className="relative z-10">
           <h1 className="font-display text-5xl leading-tight">
-            Donde las<br />personas<br />importan.
+            Cercanía real<br />y datos precisos.
           </h1>
           <p className="mt-6 text-primary-foreground/80 max-w-sm">
-            Una plataforma para que tus clientes conozcan a cada candidato como una persona, no un PDF.
+            Mucho más que un PDF. La forma más ágil y fácil de evaluar candidatos a fondo antes de la primera reunión.
           </p>
         </div>
-        <p className="text-xs uppercase tracking-widest text-primary-foreground/60">© Kindred Talent Studio</p>
+        <p className="text-xs uppercase tracking-widest text-primary-foreground/60">© Vividtalent</p>
         <div className="absolute -bottom-20 -right-20 size-80 rounded-full bg-accent-gold/20 blur-3xl" />
       </div>
 
@@ -88,7 +88,7 @@ function AuthPage() {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-8">
             <div className="size-8 bg-primary rounded-lg" />
-            <span className="font-display text-xl">KINDRED</span>
+            <span className="font-display text-xl">VIVIDTALENT</span>
           </div>
           <h2 className="font-display text-4xl">{mode === "signin" ? "Bienvenida de vuelta" : "Crear cuenta"}</h2>
           <p className="text-muted-foreground mt-2 text-sm">
